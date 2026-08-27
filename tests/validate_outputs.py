@@ -9,13 +9,21 @@ from __future__ import annotations
 
 import hashlib
 import json
+import os
 import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-BINARY = ROOT / "build" / "ubridge"
+_BINARY_CANDIDATES = (
+    ROOT / "build" / "dev" / "bin" / ("ubridge.exe" if sys.platform == "win32" else "ubridge"),
+    ROOT / "build" / "bin" / ("ubridge.exe" if sys.platform == "win32" else "ubridge"),
+    ROOT / "build" / ("ubridge.exe" if sys.platform == "win32" else "ubridge"),
+)
+BINARY = Path(os.environ.get("UBRIDGE_BINARY", "")) if os.environ.get("UBRIDGE_BINARY") else next(
+    (candidate for candidate in _BINARY_CANDIDATES if candidate.is_file()), _BINARY_CANDIDATES[0]
+)
 FIXTURE = ROOT / "fixtures" / "mpc_sample_demo"
 OUTPUT_ROOT = ROOT / "tests" / "test-output"
 

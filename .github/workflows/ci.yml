@@ -1,0 +1,26 @@
+name: CI
+on:
+  push:
+    branches: [main, develop/v0.5-production-foundation]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  build-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Configure
+        run: cmake --preset dev
+      - name: Build
+        run: cmake --build --preset dev
+      - name: Test
+        run: ctest --preset dev
+      - name: Configure release
+        run: cmake --preset release
+      - name: Package
+        run: cmake --build --preset release --target package

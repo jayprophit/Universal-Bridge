@@ -1,6 +1,8 @@
 #include "ubridge/bridge_modules.hpp"
 #include "ubridge/core/performance_tools.hpp"
 #include "ubridge/core/session_tools.hpp"
+#include "ubridge/core/sync_guard.hpp"
+#include "ubridge/platform/hardware_backends.hpp"
 #include "ubridge/platform/local_service.hpp"
 #include "ubridge/reporting_tools.hpp"
 
@@ -100,6 +102,23 @@ void conflict_and_transaction_test() {
     expect(journal.transition("transaction-001", TransactionPhase::verified), "running transaction must verify");
     expect(journal.transition("transaction-001", TransactionPhase::committed), "verified transaction must commit");
     expect(!journal.transition("transaction-001", TransactionPhase::running), "committed transaction must be immutable");
+}
+
+void sync_and_backend_contract_test() {
+    using namespace ubridge;
+    core::SyncRequest request;
+    request.expected = {1, 1, 1};
+    request.actual = request.expected;
+    expect(!core::authorize_sync(request).may_execute, "sync must require both approval and verified backup");
+    request.user_approved = true;
+    request.backup_verified = true;
+    expect(core::authorize_sync(request).may_execute, "unchanged, approved, backed-up sync plan may execute");
+    request.actual.hardware = 2;
+    expect(!core::authorize_sync(request).may_execute, "stale hardware revision must invalidate a sync plan");
+    expect(platform::mpc_sample_vendor_id == 0x09E8, "observed MPC Sample vendor ID must remain explicit");
+    expect(platform::mpc_sample_product_id == 0x205C, "observed MPC Sample product ID must remain explicit");
+    expect(platform::to_string(platform::BackendMaturity::experimental) == "experimental", "backend maturity must be reportable");
+    expect(platform::make_system_device_discovery() != nullptr, "platform discovery factory must always return a safe implementation");
 }
 
 void local_service_test() {
@@ -245,6 +264,7 @@ int main() {
     negotiation_and_workflow_test();
     mobile_and_audio_safety_test();
     conflict_and_transaction_test();
+    sync_and_backend_contract_test();
     local_service_test();
     session_asset_and_archive_test();
     performance_and_routing_test();

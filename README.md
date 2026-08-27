@@ -1,6 +1,8 @@
 # Universal Hardware Session Bridge
 
-**Version:** 0.4.0 safely implemented foundation  
+> **v0.5 pre-release production foundation.** This public repository is proprietary, not open source. See [LICENSE](LICENSE), the legacy boundary in [licenses/LEGACY-LICENSING.md](licenses/LEGACY-LICENSING.md), and the exact implementation status in [docs/PRODUCTION_STATUS.md](docs/PRODUCTION_STATUS.md).
+
+**Version:** 0.5.0 pre-release production foundation
 **Reference workflow:** Akai MPC Sample → Windows → Cubase or Reason  
 **Hard-coded platform profiles:** Windows, macOS, Linux, Android, ChromeOS, iPadOS, and iOS  
 **Design posture:** local-first, source-project safe, capability-aware
