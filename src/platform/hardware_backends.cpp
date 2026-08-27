@@ -3,6 +3,7 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <cfgmgr32.h>
+#include <initguid.h>
 #include <devpkey.h>
 #endif
 
