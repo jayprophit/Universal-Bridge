@@ -1,0 +1,82 @@
+{
+  "schema_version": "0.2.0",
+  "platforms": [
+    {
+      "id": "windows",
+      "display_name": "Microsoft Windows",
+      "state": "reference_desktop",
+      "host_mode": "desktop_bridge",
+      "local_preflight": true,
+      "runtime_qualified": true,
+      "desktop_plugin_route": true,
+      "mobile_companion_route": false,
+      "direct_mobile_host": false
+    },
+    {
+      "id": "macos",
+      "display_name": "macOS",
+      "state": "portable_core_target",
+      "host_mode": "desktop_bridge",
+      "local_preflight": true,
+      "runtime_qualified": false,
+      "desktop_plugin_route": true,
+      "mobile_companion_route": false,
+      "direct_mobile_host": false
+    },
+    {
+      "id": "linux",
+      "display_name": "Linux",
+      "state": "portable_core_target",
+      "host_mode": "desktop_bridge",
+      "local_preflight": true,
+      "runtime_qualified": false,
+      "desktop_plugin_route": true,
+      "mobile_companion_route": false,
+      "direct_mobile_host": false
+    },
+    {
+      "id": "android",
+      "display_name": "Android",
+      "state": "future_mobile_host",
+      "host_mode": "mobile_bridge_or_companion",
+      "local_preflight": false,
+      "runtime_qualified": false,
+      "desktop_plugin_route": false,
+      "mobile_companion_route": true,
+      "direct_mobile_host": false
+    },
+    {
+      "id": "chromeos",
+      "display_name": "ChromeOS",
+      "state": "future_mobile_host",
+      "host_mode": "mobile_bridge_or_companion",
+      "local_preflight": false,
+      "runtime_qualified": false,
+      "desktop_plugin_route": false,
+      "mobile_companion_route": true,
+      "direct_mobile_host": false
+    },
+    {
+      "id": "ipados",
+      "display_name": "iPadOS",
+      "state": "future_mobile_host",
+      "host_mode": "mobile_bridge_or_companion",
+      "local_preflight": false,
+      "runtime_qualified": false,
+      "desktop_plugin_route": false,
+      "mobile_companion_route": true,
+      "direct_mobile_host": false
+    },
+    {
+      "id": "ios",
+      "display_name": "iOS",
+      "state": "future_mobile_host",
+      "host_mode": "mobile_bridge_or_companion",
+      "local_preflight": false,
+      "runtime_qualified": false,
+      "desktop_plugin_route": false,
+      "mobile_companion_route": true,
+      "direct_mobile_host": false
+    }
+  ]
+}

@@ -1,0 +1,31 @@
+{
+  "profile_schema_version": "0.1.0",
+  "id": "akai.mpc-sample.reference",
+  "display_name": "Akai MPC Sample (reference profile)",
+  "status": "prototype",
+  "integration_tier": "B",
+  "declared_capabilities": {
+    "project_read": true,
+    "project_write": false,
+    "usb_midi": true,
+    "usb_audio": true,
+    "audio_channels": 2,
+    "storage_intake": true,
+    "direct_daw_project_generation": false,
+    "sequential_stem_capture": false,
+    "bidirectional_parameters": false
+  },
+  "safe_fallbacks": [
+    "read_only_project_intake",
+    "asset_inventory",
+    "midi_asset_collection",
+    "stereo_audio_exchange",
+    "transparent_daw_import_bundle"
+  ],
+  "prohibited_in_prototype": [
+    "hardware_project_writeback",
+    "undocumented_protocol_access",
+    "claimed_multichannel_capture",
+    "automatic_proprietary_daw_project_write"
+  ]
+}

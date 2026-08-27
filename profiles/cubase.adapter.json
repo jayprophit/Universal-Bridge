@@ -1,0 +1,23 @@
+{
+  "adapter_schema_version": "0.1.0",
+  "id": "steinberg.cubase.windows.reference",
+  "display_name": "Cubase on Windows (reference adapter)",
+  "status": "prototype",
+  "transport": ["exchange_bundle", "vst3_client_future"],
+  "declared_capabilities": {
+    "vst3_host": true,
+    "audio_import_package": true,
+    "midi_import_package": true,
+    "direct_project_file_write": false,
+    "programmatic_track_creation": false,
+    "parameter_feedback": false,
+    "transport_control": false
+  },
+  "safe_fallback": "generate_transparent_exchange_bundle",
+  "validation_required": [
+    "exact Cubase edition and version",
+    "VST3 host capability",
+    "project-creation or scripting route",
+    "audio and MIDI import behavior"
+  ]
+}

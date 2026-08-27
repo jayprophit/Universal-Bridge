@@ -1,0 +1,16 @@
+# CMake and native build outputs
+/build/
+/build-*/
+CMakeCache.txt
+CMakeFiles/
+Testing/
+
+# Generated bridge outputs
+/examples/output-*/
+/tests/test-output/
+
+# Local editor and operating-system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

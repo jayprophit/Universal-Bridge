@@ -1,0 +1,4428 @@
+Worked for 8m 51s
+
+Universal Hardware-to-DAW Bridge
+
+100-Problem Opportunity Audit — MPC, SP-404, Elektron, Maschine, Circuit & Similar Hardware
+
+Executive conclusion
+
+Your original problem ranks #1 in this analysis.
+
+The strongest opportunity is not simply “export stems from an MPC.” That problem is real, but parts of it are already being solved. The larger unresolved problem is:
+
+«Take a project created on music hardware, connect the hardware to a computer, reconstruct that project inside the user's DAW, maintain the musical structure, audio, MIDI, timing and control data, and keep the hardware and DAW synchronised in both directions.»
+
+That is substantially more valuable than another stem exporter or MIDI-mapping utility.
+
+For the MPC Sample specifically, Akai's current official stem workflow requires saving the project to microSD, entering SD Card Access, mounting it on the computer, opening the ".XPJ" in MPC 3 and then exporting separate tracks/submixes/returns. Critically, Akai states that other modes cannot be used while SD Card Access is active. Akai also confirms that the MPC Sample is only a 2-channel audio interface and cannot be used as a controller for MPC 3 Software.
+
+That is extremely close to the limitation you described from actually using the machine.
+
+Community discussions independently complain about the transition from the MPC Sample into a DAW, stem export, MIDI limitations, resampling, automation and sequencing.
+
+---
+
+Important competitive discovery
+
+There are already developers attacking individual pieces of this problem.
+
+MPC Sample Router
+
+MPC Sample Router already provides USB routing, MIDI control, drum-program creation and automated per-pad stem recording. It can automatically trigger each pad and record it rather than making the user manually solo/record everything.
+
+But its published limitations are extremely important for us:
+
+- MPC Sample only.
+- Currently Mac-focused.
+- Stereo master audio from the MPC.
+- No simultaneous multitrack USB audio.
+- Some functions depend on what the MPC firmware accepts.
+- It is not a universal DAW-project reconstruction system.
+- It isn't a universal multi-manufacturer bridge.
+
+MPC Extractor / The Board
+
+Killavic's MPC Extractor can extract stems from MPC projects, and The Board can load MPC Sample ".XPJ" projects and play their recorded automation. Support for MPC One/Live/X is stated as being worked on.
+
+Community users are already recommending both MPC Extractor and MPC Sample Router specifically because they reduce the current MPC Sample export pain.
+
+Therefore:
+
+Do not release merely an “MPC Sample stem exporter.”
+
+You would immediately be entering an area where independent developers are already operating.
+
+Your larger idea is still differentiated:
+
+MPC + Roland + Elektron + Maschine + Novation + legacy equipment → one universal project/control/session bridge → Cubase / Reason / Ableton / FL Studio / Logic / Studio One / Reaper / Pro Tools / etc.
+
+That is where I see the bigger opportunity.
+
+---
+
+Colour system
+
+Each problem gets a strategic colour.
+
+Colour| Meaning
+🔴 RED| Critical white-space opportunity. No satisfactory universal solution found. Strong candidate for your product.
+🟠 ORANGE| Major problem, but partial/vendor-specific solutions or workarounds already exist.
+🟡 YELLOW| Valuable secondary feature. Useful, but unlikely to sell the product by itself.
+🟢 GREEN| Quality-of-life improvement / comparatively lower priority.
+🔵 BLUE| Already relatively standard or commoditised. Needed for parity, not differentiation.
+🟣 PURPLE| Primarily belongs inside your full DAW rather than the bridge product.
+⚫ BLACK| Manufacturer/API/firmware dependent. Software can sometimes mitigate it but cannot guarantee a complete solution.
+⚪ GREY| Physical hardware limitation. Software cannot make a missing audio channel, port, converter, etc. magically exist.
+
+And I use:
+
+BRIDGE = put it in this product.
+DAW = put it primarily in your larger DAW.
+HYBRID = bridge can solve part of it.
+FIRMWARE = requires manufacturer cooperation/support for the ideal implementation.
+HARDWARE = physically constrained.
+
+---
+
+THE TOP 10
+
+🔴 #1 — Automatic hardware-project → DAW-project reconstruction
+
+BRIDGE — CRITICAL
+
+This is your problem.
+
+Load "Song A" on an MPC.
+
+Your software recognises:
+
+- Song/project
+- samples
+- sequences
+- pads
+- notes
+- velocity
+- timing
+- swing
+- automation
+- track names
+- pad names
+- BPM
+- arrangement
+- mixer state
+- effects
+- mutes
+- sends
+- audio
+
+And automatically constructs:
+
+Song A — Cubase
+
+or:
+
+Song A — Reason
+
+or:
+
+Song A — Ableton
+
+etc.
+
+Not:
+
+«“Here are 16 WAV files. Good luck.”»
+
+This is the biggest distinction.
+
+---
+
+🔴 #2 — Live bidirectional hardware ↔ DAW state synchronisation
+
+HYBRID
+
+Hardware changes computer.
+
+Computer changes hardware.
+
+Example:
+
+"MPC Pad 1 volume → 72"
+
+DAW mixer immediately follows.
+
+Then:
+
+"DAW Pad 1 volume → 93"
+
+MPC follows.
+
+Same principle for:
+
+- knobs
+- faders
+- mutes
+- solos
+- automation
+- transport
+- pad triggering
+- MIDI
+- program changes
+- sequence selection
+- parameters
+- track selection
+- compatible effects
+
+Elektron's Overbridge demonstrates that this type of architecture is possible inside one manufacturer's ecosystem: it installs a background Engine, plug-ins and standalone applications. Your opportunity would be extending the architectural idea across manufacturers.
+
+---
+
+🔴 #3 — Automatically create/reopen the corresponding computer project
+
+BRIDGE
+
+This is one of the strongest parts of your original idea.
+
+Hardware loads:
+
+"My Beat 07"
+
+Bridge searches:
+
+"My Beat 07.bridge"
+
+Then:
+
+"My Beat 07.cpr"
+or
+"My Beat 07.als"
+or equivalent.
+
+If it exists:
+
+Resume it.
+
+If not:
+
+Generate it automatically.
+
+The user should not repeatedly rebuild routing.
+
+---
+
+🔴 #4 — One-click separated DAW track creation
+
+BRIDGE
+
+Instead of dumping files into a folder:
+
+MPC:
+
+- Kick
+- Snare
+- Hi-hat
+- Bass
+- Chop 1
+- Chop 2
+- Vocal
+- Percussion
+
+becomes:
+
+DAW:
+
+- Track 1 — Kick
+- Track 2 — Snare
+- Track 3 — Hi-Hat
+- Track 4 — Bass
+- Track 5 — Chop 1
+- Track 6 — Chop 2
+- Track 7 — Vocal
+- Track 8 — Percussion
+
+with everything aligned.
+
+The same complaint appears in the SP-404 community: users still discuss multipad export, renaming and manually placing parts into DAWs rather than the machine simply reconstructing the pattern as separate DAW tracks.
+
+---
+
+🔴 #5 — Universal device-profile system
+
+BRIDGE
+
+Instead of programming the entire application separately for every machine:
+
+Universal Engine
+│
+├── Akai
+│   ├── MPC Sample
+│   ├── MPC One
+│   ├── MPC Live
+│   ├── MPC X
+│   ├── MPC1000
+│   └── MPC2500
+│
+├── Roland
+│   ├── SP-404MKII
+│   ├── SP-404SX
+│   └── MC series
+│
+├── Elektron
+│   ├── Digitakt
+│   ├── Digitakt II
+│   ├── Digitone
+│   └── Syntakt
+│
+├── Native Instruments
+│   └── Maschine
+│
+├── Novation
+│   ├── Circuit
+│   └── Circuit Tracks
+│
+└── Community Device Profile
+
+That makes the system expandable.
+
+---
+
+🔴 #6 — Preserve MIDI performance information
+
+BRIDGE
+
+Do not turn everything into dumb audio.
+
+Retain:
+
+- MIDI notes
+- velocity
+- note length
+- microtiming
+- CC
+- pitch information where available
+- aftertouch where available
+- note repeat
+- swing
+- quantisation
+- automation
+- sequence position
+- bank
+- pad identity
+
+This is central to keeping a project editable.
+
+---
+
+🔴 #7 — Automatic latency measurement and alignment
+
+BRIDGE
+
+Different hardware does not land exactly where the DAW thinks it should.
+
+Your bridge could perform a short calibration:
+
+Send test impulse
+↓
+Measure return
+↓
+Round trip = 13.42 ms
+↓
+Compensate automatically
+
+Then continually correct recording placement.
+
+SP-404 users are still reporting external-sync timing offsets and drift in August 2026.
+
+Elektron users also continue discussing the difference between Overbridge latency and their ordinary audio-interface latency.
+
+---
+
+🔴 #8 — Automatic routing, naming and organisation
+
+BRIDGE
+
+Recognise:
+
+"PAD A01 = KICK_BIG_4.wav"
+
+and create:
+
+DRUMS → KICK
+
+rather than:
+
+"Audio 01"
+
+Your bridge could recognise names and optionally classify sounds:
+
+- Kick
+- Snare
+- Hat
+- Cymbal
+- Perc
+- Bass
+- Lead
+- Keys
+- Vocal
+- Sample
+- FX
+
+But always preserve the user's original names too.
+
+---
+
+🔴 #9 — Incremental synchronisation
+
+BRIDGE
+
+If only one snare changes, don't export the entire project again.
+
+Compare hashes/state:
+
+Kick       unchanged
+Snare      CHANGED
+Hat        unchanged
+Bass       unchanged
+Sequence 3 CHANGED
+FX         unchanged
+
+Transfer only the changed data.
+
+This would make the system feel like sync, rather than import/export.
+
+---
+
+🔴 #10 — Universal session state / Total Recall
+
+BRIDGE
+
+The bridge maintains its own neutral representation of the session:
+
+Project
+ ├── devices
+ ├── tracks
+ ├── pads
+ ├── samples
+ ├── MIDI
+ ├── automation
+ ├── mixer
+ ├── routing
+ ├── sequences
+ ├── arrangement
+ └── metadata
+
+This becomes the translator between hardware ecosystems and DAWs.
+
+That neutral project representation is potentially the most strategically important part of the entire product.
+
+---
+
+TOP 20 — #11–20
+
+🟠 #11 — Mixer-state translation
+
+Levels, pan, mute, solo, routing, outputs, submixes.
+
+BRIDGE / HYBRID
+
+---
+
+🔴 #12 — Sequence/song/arrangement translation
+
+Translate hardware sequences into actual DAW timeline structure instead of one long recording.
+
+BRIDGE
+
+---
+
+🟠 #13 — Effects preservation
+
+Where the effect exists in software, recreate it.
+
+Where it doesn't:
+
+- print wet audio;
+- retain dry audio;
+- store hardware settings.
+
+HYBRID
+
+---
+
+🔴 #14 — Automated capture for stereo-only equipment
+
+Many devices cannot stream 16 independent USB channels.
+
+Your software can automate:
+
+Solo Kick → record
+Solo Snare → record
+Solo Hat → record
+...
+
+while keeping everything time-aligned.
+
+MPC Sample Router already demonstrates this principle for individual MPC Sample pads, proving that automation can overcome part of a stereo-output limitation.
+
+BRIDGE
+
+---
+
+🔴 #15 — Device-capability auto-detection
+
+Connect hardware and get:
+
+Device: MPC Sample
+USB Audio: 2 channels
+USB MIDI: Yes
+Project parser: Yes
+Bidirectional MIDI: Partial
+Multichannel audio: No
+Project read: Yes
+Controller Mode: No
+
+No manual configuration encyclopedia.
+
+BRIDGE
+
+---
+
+🔴 #16 — Automatic missing-sample collection/relinking
+
+Detect project dependencies and collect/relink them.
+
+BRIDGE
+
+---
+
+🟠 #17 — Cross-version project conversion
+
+Examples:
+
+- old MPC → modern MPC
+- old SP project → modern SP
+- MPC Sample → neutral project
+- neutral project → DAW
+
+Roland's SP-404MKII application already converts older SP-404SX/SP-404A projects, demonstrating demand for this type of compatibility.
+
+BRIDGE
+
+---
+
+🔴 #18 — DAW adapter layer
+
+Don't hard-code everything around one host.
+
+Bridge Engine
+     │
+DAW Adapter API
+ ├── Cubase
+ ├── Ableton
+ ├── Logic
+ ├── FL Studio
+ ├── Reason
+ ├── Reaper
+ ├── Studio One
+ └── Pro Tools
+
+BRIDGE
+
+---
+
+🔴 #19 — Universal plug-in + background service architecture
+
+Your product should not be just a VST.
+
+Likely package:
+
+- background hardware service;
+- standalone configuration/management app;
+- VST3;
+- AU;
+- potentially AAX;
+- CLAP later;
+- DAW-specific integration adapters.
+
+BRIDGE
+
+---
+
+🔴 #20 — Backup, version history and conflict resolution
+
+If DAW and hardware are both edited:
+
+Hardware version: 14:02
+DAW version:      14:07
+
+Software asks intelligently:
+
+- merge;
+- computer wins;
+- hardware wins;
+- duplicate;
+- inspect differences.
+
+BRIDGE
+
+---
+
+THE FULL 100-PROBLEM DATABASE
+
+---
+
+Group A — Project & Session Transfer
+
+1–10
+
+1. 🔴 ★ Automatic hardware project → DAW reconstruction. BRIDGE
+2. 🔴 ★ Live bidirectional project synchronisation. HYBRID
+3. 🔴 ★ Automatic matching DAW-project creation/reopening. BRIDGE
+4. 🔴 ★ Automatic track reconstruction. BRIDGE
+5. 🔴 ★ Universal cross-device project parser. BRIDGE
+6. 🔴 ★ Preserve MIDI/performance data rather than flattening everything. BRIDGE
+7. 🔴 ★ Incremental project synchronisation. BRIDGE
+8. 🔴 ★ Automatic track/pad naming and organisation. BRIDGE
+9. 🔴 ★ Neutral universal session representation. BRIDGE
+10. 🔴 ★ Conflict/version handling when both sides have changed. BRIDGE
+
+Why this group matters: this is the difference between a file converter and the product you are actually describing.
+
+DAWproject is worth using as part of the architecture. It is an open, vendor-agnostic project-exchange format capable of representing audio, notes, automation, plug-in state, track structures and other session data. Current native support listed by the project includes Bitwig, Studio One, Cubase, Cubasis, VST Live and n-Track.
+
+It won't solve every DAW, but it gives your neutral session layer a very useful existing standard.
+
+---
+
+Group B — Stems, Audio & Routing
+
+11–20
+
+11. 🔴 ★ One-click separated hardware → DAW stems.
+12. 🔴 ★ Automatically create and populate appropriate DAW tracks.
+13. 🟠 ★ Preserve volume/pan/mute/mixer state.
+14. 🟠 ★ Preserve or correctly render hardware effects.
+15. 🔴 ★ Automate sequential stem capture on stereo-only equipment.
+16. 🟠 ★ Correctly capture reverb/delay/effect tails.
+17. ⚪ Multichannel USB unavailable on some machines.
+18. 🟡 Automatic sample-rate/bit-depth conversion.
+19. 🟠 Correct start/end alignment of exported recordings.
+20. 🟠 Detect empty, incomplete or failed renders automatically.
+
+MPC Sample evidence: Akai's official procedure still involves SD Card Access followed by MPC 3 Audio Mixdown, rather than the machine appearing as a fully live multitrack DAW session.
+
+SP evidence: users continue to describe multipad export/manual recording as cumbersome when finishing projects in a DAW.
+
+---
+
+Group C — MIDI, Pads, Knobs & Hardware Control
+
+21–30
+
+21. 🔴 Universal two-way knob/fader/pad mapping.
+22. 🔴 Preserve note velocity.
+23. 🔴 Preserve microtiming.
+24. 🔴 Convert hardware automation into DAW automation.
+25. 🟠 Normalise different manufacturer pad-note maps.
+26. 🟠 Automatically manage MIDI channels.
+27. 🔴 Automatic controller/device-profile loading.
+28. 🟠 MIDI Thru/merge management.
+29. 🟠 Bypass manufacturer-specific controller workflows where technically possible.
+30. 🟠 Translate varying aftertouch/MPE/pitch-bend capabilities.
+
+Important: generic MIDI mapping alone is not your market gap.
+
+Cubase already has a MIDI Remote API specifically for developers to bridge MIDI hardware into Cubase, and tools such as Bome MIDI Translator already provide extensive MIDI translation and automation.
+
+So:
+
+“MPC knobs control Cubase knobs” = existing category.
+
+Where you improve it:
+
+“The MPC project, audio, MIDI, controller state, mappings, automation and DAW session all stay linked.”
+
+That's considerably different.
+
+---
+
+Group D — Timing, Clock & Latency
+
+31–40
+
+31. 🔴 Automatic round-trip latency calibration.
+32. 🔴 Long-session drift detection and correction.
+33. 🟠 MIDI-clock jitter mitigation.
+34. 🟠 Automatic first-beat/start-offset correction.
+35. 🟠 Consistent play/stop/continue transport.
+36. 🟠 Compensate hardware-vs-audio-interface timing differences.
+37. 🔴 Multi-device clock alignment.
+38. ⚫ Detect buffer settings likely to create clicks/dropouts.
+39. 🟠 Account for latency introduced by hardware FX.
+40. 🔴 Automatically place captured stems precisely on the DAW grid.
+
+SP-404 owners have current 2026 discussions specifically about start timing and synchronisation, including reports of patterns beginning behind the clock or drifting before stabilising.
+
+Modern MPC users also report Controller Mode cases where raising buffers improves stability but worsens responsiveness.
+
+---
+
+Group E — USB, Drivers & Device Discovery
+
+41–50
+
+41. 🔴 ★ Plug-and-play device discovery.
+42. 🟠 Automatic recovery after device disconnect/reconnect.
+43. 🟠 Detect incompatible firmware/software combinations.
+44. ⚫ OS/driver compatibility monitoring.
+45. 🟠 Detect competing audio/MIDI drivers.
+46. ⚫ Detect poor hubs/cables/chipset conditions.
+47. 🟠 Background-service conflict detection.
+48. 🟢 Firmware updater assistance.
+49. 🟠 Windows ASIO/audio-device conflict management.
+50. 🔴 One diagnostic page explaining exactly why audio/MIDI/control isn't working.
+
+Elektron's own support documentation illustrates the sort of complexity users face: Overbridge requires an Engine, drivers and plug-ins, and its troubleshooting covers missing devices and communication-service conflicts.
+
+A universal bridge needs a very good diagnostics subsystem.
+
+---
+
+Group F — Files, Samples & Libraries
+
+51–60
+
+51. 🔴 ★ Collect all samples required by a project.
+52. 🟠 Automatically relink missing samples.
+53. 🟠 Hide manufacturer-specific folder complexity.
+54. 🟠 Protect project-data folder relationships when files are moved.
+55. 🟠 Handle old/new project versions.
+56. 🟠 Translate legacy project/sample structures.
+57. 🟡 Detect duplicate samples.
+58. 🔵 Convert common audio formats.
+59. 🟡 Add universal sample tags/search metadata.
+60. 🟠 Automatic project backup/version snapshots.
+
+Akai confirms that an MPC Sample project consists of an MPC project plus its associated ProjectData folder, making dependency management a genuine concern for conversion/synchronisation software.
+
+---
+
+Group G — Effects, Automation & Mix Translation
+
+61–70
+
+61. 🔴 Mirror hardware parameter state into the software representation.
+62. 🟠 Handle hardware effects with no DAW equivalent.
+63. 🟠 Choose wet/dry/both when transferring.
+64. 🟠 Preserve send/return relationships.
+65. 🟠 Preserve pad-level versus master/input FX routing.
+66. 🟠 Detect unwanted automation inherited between sequences.
+67. 🟠 Detect hardware/software control-state disagreement.
+68. 🔴 Manufacturer-independent parameter-ID/macro abstraction.
+69. 🟡 Non-destructive alternative to permanent resampling.
+70. 🟡 Preserve third-party plug-in state where project formats permit it.
+
+MPC Sample users are currently requesting improvements to FX/Flex Beat automation and sequence-specific automation behaviour.
+
+---
+
+Group H — MPC Sample-Specific Problems
+
+71–80
+
+71. 🔴 SD Card Access locks out other operating modes. FIRMWARE/HYBRID
+72. 🔴 Stem workflow currently involves SD + MPC 3 rather than seamless live session sync.
+73. ⚪ USB audio is currently only 2-channel.
+74. 🟠 MPC Sample is officially not an MPC 3 controller.
+75. 🟣 Community users complain about the single-track/no-multitimbral design.
+76. 🟠 Limited chromatic/external MIDI workflows compared with fuller MPCs.
+77. 🟣 Users request more comprehensive FX automation.
+78. 🟣 Users request sequence-based mute automation.
+79. 🟣 Users request additional chopping/resampling capabilities.
+80. 🟢 Better project/sample naming and library management.
+
+The first four are particularly relevant to your bridge because Akai's own documentation confirms #71–74.
+
+Current community requests additionally include resampling, FX automation, mute behaviour, MIDI improvements and other workflow additions.
+
+---
+
+Group I — SP-404 / Elektron / Maschine / Circuit Problems
+
+81–90
+
+81. 🔴 SP-404 pattern → separated DAW tracks is still cumbersome.
+82. 🟠 SP exporting can require sample preparation/renaming/manual handling.
+83. 🟠 SP external clock/start synchronisation complaints.
+84. 🟠 Elektron Overbridge is extremely capable but manufacturer-specific.
+85. 🟠 Overbridge still brings driver/latency/device-detection complexity.
+86. 🟠 Maschine routing differs depending on host/DAW configuration.
+87. ⚫ Older hardware can lose support when manufacturer software generations change.
+88. ⚪ Circuit Tracks' USB port does not carry audio.
+89. 🔴 Circuit-style equipment may therefore require automated analogue/stereo capture for separate tracks.
+90. ⚪ Some MIDI-merging scenarios physically require additional routing/interfaces.
+
+Novation explicitly documents Circuit Tracks' USB connection as MIDI class-compliant while stating that the USB port does not carry audio.
+
+This illustrates exactly why your architecture needs capability profiles and fallbacks rather than assuming every device behaves like an MPC or Elektron box.
+
+---
+
+Group J — Legacy vs Modern Hardware / Ecosystem Friction
+
+91–100
+
+91. 🟡 Legacy MPC users often prefer direct physical-button workflows.
+92. 🟡 Some modern MPC users dislike touchscreen/menu dependency.
+93. 🔵 Legacy machines lack many modern plug-ins/conveniences.
+94. ⚪ MPC1000-era USB is essentially storage rather than modern USB audio/MIDI integration.
+95. 🟠 Modern Controller Mode introduces computer software/driver/version dependencies.
+96. 🟠 Project compatibility can change across software generations.
+97. 🟣 Standalone hardware cannot necessarily load arbitrary desktop plug-ins.
+98. 🔵 One plug-in format cannot support every major DAW.
+99. 🟠 DAW-to-DAW project interchange remains fragmented.
+100. 🔴 No single cross-manufacturer session-mirroring layer currently covers this entire hardware category.
+
+The MPC1000 manual, for example, shows 64 sequencer tracks, physical MIDI I/O, multiple individual audio outputs and USB Mass Storage Class rather than the modern USB integration found on newer hardware.
+
+At the same time, contemporary MPC discussions repeatedly show the trade-off: newer models are drastically more capable, while some legacy users still prefer the tactile/direct workflow of machines such as the 1000/2000/2500 and dislike the additional menus or touchscreen interaction.
+
+---
+
+Old MPC vs New MPC vs MPC Sample
+
+Area| Legacy MPCs| Modern MPC One/Live/X/etc.| MPC Sample
+Sampling| ✅ Core function| ✅ Advanced| ✅ Main focus
+Sequencing| ✅ Strong classic MIDI| ✅ Very advanced| ⚠ Simplified
+Tracks| ✅ Many on models such as MPC1000| ✅ Extensive| ⚠ Major simplification
+Physical workflow| ✅ Strong| ⚠ More screen/software interaction| ✅ Deliberately immediate
+Touchscreen| ❌| ✅| ❌
+Plug-ins| ❌/limited era-specific FX| ✅| ❌ full modern plug-in ecosystem
+USB storage| ✅ later legacy models| ✅| ✅
+USB MIDI| ⚠ model-dependent / absent on older models| ✅| ✅
+USB audio| ❌ on many legacy units| ✅ on current models/configurations| ✅ 2-channel
+Computer integration| ⚠ primitive| ✅ much stronger| ⚠ partial
+Full MPC3 Controller Mode| ❌| ✅ supported models| ❌
+Modern project conversion| ⚠ requires conversion| ✅| ✅ Sample → MPC3
+Automatic universal DAW session| ❌| ❌| ❌
+Your bridge opportunity| HIGH| MEDIUM/HIGH| VERY HIGH
+
+Modern MPC3 Desktop has also gained AU/VST builds since version 3.9, so Akai itself is moving closer to app-plus-plug-in integration.
+
+But Akai is naturally solving Akai → Akai software.
+
+You would solve:
+
+Hardware ecosystem → DAW ecosystem.
+
+---
+
+What already exists versus what doesn't
+
+Existing product/technology| What it solves| What it doesn't solve
+MPC 3 Desktop| MPC ecosystem, stems, plug-in operation| Universal cross-manufacturer bridge
+MPC Sample Router| MPC Sample USB routing, automated stems, kits| Other manufacturers / universal DAW sessions
+MPC Extractor| MPC project extraction/stems| Universal live bidirectional hardware sync
+Roland SP-404MKII App| SP editor/librarian, standalone + AU/VST3, legacy conversion| Universal hardware bridge
+Elektron Overbridge| Excellent Elektron computer integration| Non-Elektron hardware
+Ableton Move/Link Audio| Tight Move ↔ Live transfer/streaming| General cross-DAW/cross-device solution
+Cubase MIDI Remote| Hardware controller → Cubase mappings| Audio/project reconstruction
+Bome MIDI Translator| Generic MIDI translation/automation| Full musical project synchronisation
+DAWproject| DAW ↔ DAW project interchange| Direct hardware protocol layer
+Your proposed system| Unify all of the above concepts| This is the opportunity
+
+Roland explicitly distributes its SP-404MKII App as both standalone software and an AU/VST3 plug-in, so the “app + plug-in from the same core” architecture you suggested earlier is already proven commercially.
+
+Ableton has likewise implemented real-time individual-track streaming from Move to Live through Link Audio.
+
+So the technologies exist.
+
+They simply remain ecosystem islands.
+
+---
+
+What your product should actually be
+
+I would classify it as a:
+
+Universal Hardware Session Bridge
+
+Not simply:
+
+- VST;
+- MIDI mapper;
+- stem extractor;
+- hardware editor;
+- DAW;
+- driver.
+
+It contains several of those technologies.
+
+Proposed architecture
+
+┌─────────────────────────────────────────────────────────┐
+│                 DAW / HOST APPLICATION                   │
+│ Cubase | Reason | Ableton | Logic | FL | Reaper | etc. │
+└─────────────────────────┬───────────────────────────────┘
+                          │
+                 VST3 / AU / AAX / CLAP
+                          │
+┌─────────────────────────▼───────────────────────────────┐
+│                  SESSION BRIDGE CORE                     │
+│                                                         │
+│  Project Model                                          │
+│  State Sync                                             │
+│  MIDI Translation                                       │
+│  Automation Translation                                 │
+│  Audio Routing                                          │
+│  Stem Capture                                           │
+│  Timing/Latency Engine                                  │
+│  Asset Manager                                          │
+│  Mapping Engine                                         │
+│  Project Converter                                      │
+└─────────────────────────┬───────────────────────────────┘
+                          │
+              Background Hardware Service
+                          │
+┌─────────────────────────▼───────────────────────────────┐
+│                    DEVICE ADAPTERS                       │
+│                                                         │
+│ MPC | SP-404 | Digitakt | Maschine | Circuit | Legacy  │
+└─────────────────────────┬───────────────────────────────┘
+                          │
+              USB / MIDI / Audio / Storage
+                          │
+┌─────────────────────────▼───────────────────────────────┐
+│                     HARDWARE                            │
+└─────────────────────────────────────────────────────────┘
+
+The core should be native C++, with the hardware/protocol/session engine separated cleanly from the UI and plug-in wrappers.
+
+That means your eventual DAW can later import the same core rather than you rewriting this work.
+
+---
+
+Hardware Capability Levels
+
+This is how you make “universal” realistic.
+
+Level A — Full integration
+
+Device exposes:
+
+- multichannel audio;
+- MIDI;
+- parameter state;
+- transport;
+- project data.
+
+Result:
+
+Near-Overbridge-level integration.
+
+---
+
+Level B — Project + MIDI + stereo audio
+
+Example closer to MPC Sample.
+
+Bridge can:
+
+- parse project;
+- read assets;
+- control pads;
+- read MIDI;
+- automate stem recording;
+- reconstruct DAW project.
+
+Not simultaneous 16-channel audio.
+
+Still extremely useful.
+
+---
+
+Level C — MIDI + analogue audio
+
+For equipment without USB audio.
+
+Bridge:
+
+- sends/receives MIDI;
+- controls transport;
+- records analogue input;
+- automatically solos/mutes parts;
+- aligns them.
+
+---
+
+Level D — Legacy/project-file mode
+
+Older sampler.
+
+Bridge:
+
+- reads project files/storage;
+- converts programs;
+- reconstructs MIDI/sequences;
+- maps samples;
+- uses traditional MIDI/audio where necessary.
+
+This means even equipment from different generations can participate without pretending all hardware has the same capabilities.
+
+---
+
+What goes into the bridge and what waits for your DAW?
+
+Put into the bridge NOW
+
+- device recognition;
+- device profiles;
+- project parsing;
+- stem capture;
+- DAW reconstruction;
+- two-way MIDI;
+- parameter mapping;
+- session state;
+- automatic routing;
+- timing calibration;
+- asset transfer;
+- project conversion;
+- DAW adapters;
+- plug-in versions;
+- backup/version management;
+- sync engine.
+
+Rough conclusion:
+
+Around 17 of the top 20 problems are materially solvable in software.
+
+The other few can still be partially solved but require manufacturer firmware/protocol support for perfect implementation.
+
+---
+
+Put primarily into the full DAW later
+
+Things such as:
+
+- piano roll;
+- full arranger;
+- full audio editing;
+- synth engine;
+- mastering suite;
+- advanced mixer;
+- clip launcher;
+- orchestration;
+- score editor;
+- built-in instruments;
+- advanced sampler editor;
+- full automation editor;
+- advanced time stretching;
+- chord system;
+- complete recording environment.
+
+Those don't need to delay this product.
+
+---
+
+Things your software cannot magically fix
+
+A universal bridge still cannot manufacture capabilities a device physically lacks.
+
+For example:
+
+Circuit Tracks does not send audio through USB. Your program cannot turn its USB port into an eight-channel audio interface through software.
+
+MPC Sample exposes a two-channel audio interface. Your program cannot turn that into sixteen simultaneous physical USB outputs unless Akai changes the firmware/protocol.
+
+But you can automate the workflow around those restrictions.
+
+That is an important distinction.
+
+---
+
+The most important strategic finding
+
+Originally I thought:
+
+«“Build the MPC Sample bridge.”»
+
+After researching the actual market further, I would change that slightly.
+
+Don't compete with MPC Sample Router or MPC Extractor head-on.
+
+Use your MPC Sample as the development/reference device, but build the architecture as:
+
+Universal Hardware Session Bridge
+
+Your first profile can be:
+
+Akai MPC Sample
+
+But the underlying program should already expect:
+
+MPC Sample
+SP-404MKII
+Digitakt
+Maschine
+Circuit
+MPC1000
+MPC2500
+Modern MPC
+Other sampler
+Other groovebox
+User-created profile
+
+Then you're not selling:
+
+«“A program that fixes the MPC Sample.”»
+
+You're selling:
+
+«“The missing connection between hardware music production and the DAW.”»
+
+---
+
+The strongest commercial feature bundle
+
+If I were freezing the initial commercial specification today, I would make the first release revolve around these ten modules:
+
+1. Device Discovery
+
+Plug in supported hardware and identify it automatically.
+
+2. Project Mirror
+
+Read the current hardware project.
+
+3. Session Builder
+
+Construct a DAW session automatically.
+
+4. Stem Engine
+
+Transfer or automatically capture separated audio.
+
+5. MIDI Mirror
+
+Transfer/edit MIDI rather than converting everything to audio.
+
+6. Control Mirror
+
+Hardware knobs/pads ↔ DAW parameters.
+
+7. State Sync
+
+Keep changes synchronised.
+
+8. Timing Engine
+
+Calibrate latency/drift automatically.
+
+9. Asset Manager
+
+Samples/project data/backups/relinking.
+
+10. Device Profile SDK
+
+Let developers/community members add hardware you don't personally own.
+
+That tenth feature could become extremely powerful.
+
+Instead of you buying 100 drum machines:
+
+someone can create:
+
+"Roland_MC707.profile"
+
+someone else:
+
+"MPC2500.profile"
+
+someone else:
+
+"Elektron_ModelSamples.profile"
+
+and submit it to your device-profile repository.
+
+---
+
+Final verdict
+
+Your original problem is not simply an MPC Sample annoyance.
+
+It represents a larger category:
+
+hardware/DAW session discontinuity.
+
+Individual companies have recognised the problem:
+
+- Elektron built Overbridge.
+- Roland built the SP-404MKII App.
+- Ableton tightly integrates Move with Live.
+- Akai integrates MPC hardware with MPC software.
+- independent MPC Sample developers are already building routers and extractors.
+- DAWproject is trying to solve session portability between DAWs.
+
+But each solution tackles a particular island.
+
+I have not found a current product that combines cross-manufacturer hardware discovery, project interpretation, automated DAW reconstruction, bidirectional parameter/MIDI synchronisation, audio/stem capture, Total Recall and multiple DAW adapters into one universal layer.
+
+That is the gap I would build around.
+
+And importantly, you do not need to finish your DAW first.
+
+This bridge can be released independently, while its C++ session/device engine later becomes a native subsystem of the larger DAW.
+
+Worked for 1m 4s
+
+I’ve filtered this so the list is useful for software you can actually build. I’m not counting things such as “the screen is too small” or “I want more physical outputs” unless an external app can compensate for them.
+
+MPC Top 100 Software-Solvable Problems & Product Opportunities
+
+Companion App / Plug-in / VST / Bridge / Utility Research List
+
+Scope
+
+This list covers the wider Akai MPC ecosystem, including:
+
+- MPC Sample
+- MPC One / One+
+- MPC Live / Live II / Live III
+- MPC X / X SE
+- MPC Key
+- MPC Studio
+- MPC Desktop
+- MPC 2 → MPC 3 migration
+- legacy MPC workflows where relevant
+- MPC ↔ external hardware
+- MPC ↔ Cubase / Reason / Ableton / Logic / FL Studio / Reaper / Studio One / Pro Tools and other DAWs
+
+It deliberately concentrates on things that can potentially be solved by:
+
+an application, plug-in, VST3/AU/CLAP component, background service, project converter, MIDI/audio bridge, controller layer, file utility or DAW integration layer.
+
+This is a ranked product-opportunity synthesis, not a claim that exactly 100 complaints were counted statistically. Ranking combines recurring community complaints, official Akai limitations/known issues, impact on workflow, and how realistically third-party software can address them.
+
+Akai itself currently documents substantial MPC 2/MPC 3 project-architecture differences, while current MPC 3 Desktop releases continue to carry known compatibility, editing, plug-in and controller-mode issues. Community discussions repeatedly concentrate on finishing tracks in DAWs, transferring projects, stems, Controller Mode, MIDI and workflow discontinuity.
+
+---
+
+Colour Key
+
+Colour| Meaning
+🔴| Major opportunity / high priority — strong candidate for your product
+🟠| Important — real recurring problem; partial solutions exist
+🟡| Useful improvement — worthwhile as part of a larger product
+🔵| Standard/parity feature — already available somewhere but needed
+⚫| Manufacturer-dependent — your software can mitigate it, but Akai controls part of the limitation
+
+Buildability
+
+FULL = a third-party program can substantially solve it.
+
+PARTIAL = useful workaround possible, but complete implementation needs Akai access/support.
+
+---
+
+TOP 10
+
+🔴 1. MPC Project → DAW Project Automatically
+
+FULL/PARTIAL
+
+The core problem you originally identified.
+
+User loads:
+
+MPC Project: My Song
+
+Your application creates:
+
+Cubase / Reason / Ableton / FL / Logic
+              ↓
+         My Song
+              ↓
+Kick
+Snare
+Hi Hat
+Bass
+Samples
+Vocals
+FX
+MIDI
+Automation
+Arrangement
+
+No manually exporting and rebuilding everything.
+
+PRODUCT: Universal MPC Session Bridge.
+
+---
+
+🔴 2. Live Two-Way MPC ↔ DAW Synchronisation
+
+PARTIAL
+
+Instead of:
+
+MPC → computer
+
+or:
+
+computer → MPC
+
+you want:
+
+MPC ⇄ Bridge ⇄ DAW
+
+Move a compatible MPC control:
+
+→ DAW changes.
+
+Change compatible DAW parameter:
+
+→ MPC state changes.
+
+This is considerably more powerful than ordinary MIDI mapping.
+
+---
+
+🔴 3. Seamless Standalone ↔ Desktop ↔ DAW Project Continuity
+
+FULL/PARTIAL
+
+A frequent source of friction is that users expect to start on MPC standalone and simply continue on desktop.
+
+In reality, users still discuss copying projects, matching plug-ins, exporting stems and navigating hardware/software limitations.
+
+Your software creates the missing synchronization layer.
+
+---
+
+🔴 4. Reliable Automatic Stem Export
+
+FULL
+
+Users report stems occasionally exporting incorrectly, silently or incompletely, and MPC Sample users particularly complain about the process required to reach a DAW.
+
+Your system could:
+
+- inspect stems;
+- export;
+- verify;
+- detect silence;
+- retry failed tracks;
+- retain names;
+- align everything;
+- import everything into the DAW.
+
+---
+
+🔴 5. Automatic Pad → Individual DAW Track Reconstruction
+
+FULL
+
+Instead of one drum track:
+
+DRUM PROGRAM
+
+explode automatically into:
+
+Kick
+Snare
+Closed Hat
+Open Hat
+Clap
+Perc 1
+Perc 2
+Sample 1
+Sample 2
+...
+
+This is particularly valuable for mixing.
+
+---
+
+🔴 6. Preserve MIDI Instead of Flattening Everything to WAV
+
+FULL/PARTIAL
+
+Transfer:
+
+- notes;
+- velocity;
+- timing;
+- swing;
+- note duration;
+- CC;
+- automation;
+- pitch bend;
+- aftertouch where supported;
+- sequence information;
+- pad assignment.
+
+Then the musician remains able to edit the song.
+
+---
+
+🔴 7. Automatic MPC Project Matching / Total Recall
+
+FULL
+
+If MPC loads:
+
+"Summer Beat 4"
+
+bridge sees:
+
+Summer Beat 4
+    ↓
+Existing computer session found
+    ↓
+Load it
+
+If none exists:
+
+Create computer project
+↓
+Synchronise MPC
+↓
+Save relationship
+
+This directly implements your original idea.
+
+---
+
+🔴 8. Universal MPC/DAW Mapping System
+
+FULL
+
+Profiles such as:
+
+MPC Sample → Reason
+MPC Sample → Cubase
+MPC One → Cubase
+MPC Live → Logic
+MPC X → Ableton
+MPC Studio → FL Studio
+
+with intelligent defaults rather than making users map everything manually.
+
+---
+
+🔴 9. Automatic Timing / Latency Alignment
+
+FULL
+
+Measure:
+
+MPC output
+↓
+computer input
+↓
+round-trip latency
+
+and automatically compensate.
+
+Essential when transferring multiple tracks.
+
+---
+
+🔴 10. Universal MPC Session File
+
+FULL
+
+Create your own intermediate representation:
+
+.aether-session
+or
+.mpcbridge
+
+containing:
+
+- hardware identity;
+- MPC project;
+- audio;
+- MIDI;
+- pads;
+- tracks;
+- programs;
+- automation;
+- sequence structure;
+- arrangement;
+- mixer;
+- routing;
+- samples;
+- FX metadata;
+- mappings.
+
+This could eventually become the foundation shared with your full DAW.
+
+---
+
+TOP 20
+
+🔴 11. Automatic MPC Song/Sequence → DAW Arrangement
+
+FULL
+
+MPC sequences become DAW timeline sections automatically.
+
+Example:
+
+SEQ 01 Intro       → bars 1–8
+SEQ 02 Verse       → bars 9–24
+SEQ 03 Chorus      → bars 25–40
+SEQ 04 Verse 2     → bars 41–56
+
+Users currently use workarounds such as converting Song Mode to a long sequence and then exporting audio.
+
+---
+
+🔴 12. Incremental Synchronisation
+
+FULL
+
+Don't transfer everything again.
+
+Kick      unchanged
+Snare     changed
+Bass      changed
+Vocal     unchanged
+Sequence  changed
+
+Only transfer changes.
+
+---
+
+🔴 13. Missing-Sample Detection & Automatic Relinking
+
+FULL
+
+Find missing project files across:
+
+- SD;
+- USB;
+- computer;
+- external drive;
+- user library.
+
+Then offer automatic relinking.
+
+---
+
+🔴 14. Automated MPC Sample Stem Capture
+
+FULL/PARTIAL
+
+Particularly valuable for the MPC Sample's two-channel computer audio workflow.
+
+Software can automate solo/capture cycles where simultaneous multichannel transfer isn't available.
+
+Akai's current official MPC Sample stem procedure still requires saving to microSD, entering SD Card Access, opening the XPJ in MPC Desktop and exporting from there; other MPC modes are unavailable while SD Card Access is active.
+
+---
+
+🔴 15. MPC ↔ External Hardware ↔ DAW Routing Manager
+
+FULL/PARTIAL
+
+One diagram:
+
+MIDI Keyboard
+      ↓
+     MPC
+      ↓
+Hardware Synth
+      ↓
+Audio Interface
+      ↓
+     DAW
+
+Your application figures out ports/channels/routing.
+
+---
+
+🔴 16. Project Difference / Conflict Detection
+
+FULL
+
+If both sides changed:
+
+MPC: 15:31
+DAW: 15:44
+
+show:
+
+MPC changed:
+Snare pattern
+Track 4 level
+
+DAW changed:
+Bass MIDI
+Master FX
+
+Then:
+
+Merge / MPC Wins / DAW Wins / Create Version.
+
+---
+
+🔴 17. Automated MPC Backup & Version History
+
+FULL
+
+Example:
+
+My Song v1
+My Song v2
+My Song v3
+My Song - before stems
+My Song - before DAW edit
+
+Automatically rather than manually.
+
+---
+
+🔴 18. Automatic MPC Device Capability Detection
+
+FULL
+
+Example:
+
+Device: MPC Sample
+
+Project parsing        YES
+USB MIDI               YES
+USB audio              2 channels
+Controller Mode        NO
+Stem automation        YES
+Live parameter sync    PARTIAL
+SD project access      YES
+
+Your application adapts itself accordingly.
+
+---
+
+🔴 19. MPC Effect-State Preservation
+
+PARTIAL
+
+If exact FX cannot be recreated:
+
+retain:
+
+- effect name;
+- parameter settings;
+- routing;
+- wet audio;
+- dry audio;
+- automation.
+
+Don't just throw the information away.
+
+---
+
+🔴 20. Universal MPC Companion Plug-in + Background Engine
+
+FULL
+
+Not just one executable.
+
+MPC Bridge Engine
+│
+├── Background service
+├── Standalone app
+├── VST3
+├── AU
+├── CLAP
+├── DAW adapters
+└── Device profiles
+
+This is the architecture I would use.
+
+---
+
+21–30 — DAW Transfer & Session Problems
+
+🟠 21. Stem exports containing silent tracks
+
+FULL
+
+Automatically inspect rendered files before import.
+
+Community users have reported inconsistent stem export where expected stems contain no audio.
+
+🟠 22. Missing tracks during stem export
+
+FULL
+
+Compare project track count against exported files.
+
+🟠 23. Incorrect stem start/end lengths
+
+FULL
+
+Normalize all exports to project boundaries.
+
+🔴 24. Pads automatically exploded into mixer tracks
+
+FULL
+
+Useful across almost every MPC model.
+
+🟠 25. Automatic wet + dry versions
+
+FULL/PARTIAL
+
+Export:
+
+Snare_DRY.wav
+Snare_WET.wav
+
+🟠 26. Preserve return FX separately
+
+FULL/PARTIAL
+
+🟠 27. Preserve submixes
+
+FULL/PARTIAL
+
+🟠 28. Automatically rebuild bus structure
+
+FULL/PARTIAL
+
+🟠 29. Automatic track naming
+
+FULL
+
+🟡 30. Automatic colour coding in supported DAWs
+
+FULL
+
+---
+
+31–40 — MIDI Problems
+
+🔴 31. Automatic MPC MIDI routing configuration
+
+FULL
+
+🔴 32. MIDI channel conflict detection
+
+FULL
+
+🔴 33. Automatically translate MPC pad-note maps
+
+FULL
+
+🔴 34. Preserve velocity
+
+FULL
+
+🔴 35. Preserve MPC swing/groove timing
+
+FULL/PARTIAL
+
+🔴 36. Preserve microtiming
+
+FULL
+
+🟠 37. Preserve MIDI CC automation
+
+FULL/PARTIAL
+
+🟠 38. Preserve program changes
+
+FULL/PARTIAL
+
+🟠 39. Preserve aftertouch / pressure data
+
+FULL/PARTIAL
+
+🟠 40. MIDI Thru / merge / split manager
+
+FULL
+
+---
+
+41–50 — Clock, Transport & Synchronisation
+
+🔴 41. One master transport across MPC and DAW
+
+FULL/PARTIAL
+
+Play DAW:
+
+MPC plays.
+
+Stop MPC:
+
+DAW stops.
+
+🔴 42. Automatic MIDI-clock setup
+
+FULL
+
+🔴 43. Detect sync drift
+
+FULL
+
+🔴 44. Correct accumulated timing drift
+
+FULL/PARTIAL
+
+🟠 45. Automatically compensate MIDI latency
+
+FULL
+
+🟠 46. Automatically compensate audio latency
+
+FULL
+
+🟠 47. Ableton Link configuration manager
+
+FULL
+
+Akai's MPC 3.8 known issues included sync trouble when recording USB audio into MPC clips from Ableton Live while Ableton Link was active.
+
+🟠 48. Sample-accurate stem alignment
+
+FULL
+
+🟠 49. Tempo-change conversion
+
+FULL/PARTIAL
+
+🟠 50. Time-signature compatibility checker
+
+FULL
+
+Current MPC Desktop known issues have included non-4/4 playback problems, showing why a translator should explicitly validate time-signature behaviour.
+
+---
+
+51–60 — Controller Mode & Computer Integration
+
+🔴 51. Controller Mode connection manager
+
+FULL/PARTIAL
+
+🔴 52. Automatically reconnect disconnected MPC
+
+FULL/PARTIAL
+
+🟠 53. Detect audio clicks/pops/dropout conditions
+
+FULL
+
+Users continue to report cases where Controller Mode introduces clicks, pops or dropouts even when MPC Desktop behaves normally without the hardware attached.
+
+🟠 54. Automatic optimal buffer configuration
+
+FULL
+
+Could benchmark:
+
+64
+128
+256
+512
+
+and recommend the best compromise.
+
+🔴 55. Unified hardware + software routing view
+
+FULL
+
+🔴 56. Restore external MIDI routing automatically in Controller Mode
+
+PARTIAL
+
+Users have reported workflows behaving differently between standalone and Controller Mode, including external MIDI and sampler/input routing.
+
+🟠 57. Controller Mode profile persistence
+
+FULL/PARTIAL
+
+🔴 58. Map MPC controls directly to third-party DAW parameters
+
+FULL
+
+🟠 59. Automatically switch mappings when DAW track changes
+
+FULL
+
+🟠 60. User-created controller templates
+
+FULL
+
+---
+
+61–70 — Project Compatibility & Migration
+
+MPC 3 significantly changed the track/program architecture. Akai explicitly warns that MPC 2 projects can behave differently when imported into MPC 3, including the conversion of secondary tracks sharing a program into MIDI tracks targeting a primary track.
+
+🔴 61. MPC2 → MPC3 project analyser
+
+FULL
+
+Before conversion, tell the user what will change.
+
+🔴 62. MPC3 → MPC2 compatibility analyser
+
+FULL/PARTIAL
+
+🔴 63. Automatic safe duplicate before project conversion
+
+FULL
+
+🟠 64. Track/program architecture converter
+
+FULL/PARTIAL
+
+🔴 65. Detect unsupported MPC3 features before moving project back to older hardware/software
+
+FULL
+
+🟠 66. Convert compatible features automatically
+
+FULL
+
+🟠 67. Freeze/render incompatible features automatically
+
+FULL/PARTIAL
+
+🟠 68. Preserve legacy sequence structure
+
+FULL/PARTIAL
+
+🟠 69. Legacy MPC project importer
+
+FULL/PARTIAL
+
+🔴 70. Cross-model compatibility report
+
+FULL
+
+Example:
+
+PROJECT: Beat 27
+
+MPC Live III     100%
+MPC X            100%
+MPC One           91%
+MPC Sample        38%
+MPC1000           26%
+
+---
+
+71–80 — Samples, Libraries & Project Files
+
+🔴 71. Automatic project dependency collection
+
+FULL
+
+🔴 72. Missing-file repair
+
+FULL
+
+🟠 73. Sample-path relinking
+
+FULL
+
+🟠 74. Duplicate-sample detection
+
+FULL
+
+🟠 75. Detect unused samples
+
+FULL
+
+🟠 76. Smart project cleanup
+
+FULL
+
+🟡 77. Sample metadata/tagging
+
+FULL
+
+Possible categories:
+
+- kick;
+- snare;
+- bass;
+- vocal;
+- loop;
+- instrument;
+- FX;
+- BPM;
+- key.
+
+🟠 78. Search across SD + SSD + USB + computer simultaneously
+
+FULL
+
+🟠 79. One-click sample collection into project
+
+FULL
+
+🟠 80. Project archive/restore format
+
+FULL
+
+---
+
+81–90 — Automation, Effects & Mixing
+
+🔴 81. Convert MPC automation into DAW automation
+
+FULL/PARTIAL
+
+🔴 82. Convert DAW automation back into supported MPC automation
+
+PARTIAL
+
+🟠 83. Preserve sequence-specific automation states
+
+FULL/PARTIAL
+
+MPC Sample users specifically request improved automation behaviour and sequence-specific FX/mute handling.
+
+🟠 84. Detect automation accidentally carrying between sequences
+
+FULL
+
+🟠 85. Record/mirror pad mutes as automation
+
+FULL/PARTIAL
+
+🟠 86. Record/mirror FX gestures
+
+FULL/PARTIAL
+
+🟠 87. Hardware FX → DAW approximation system
+
+FULL/PARTIAL
+
+Example:
+
+MPC Delay
+     ↓
+Closest installed DAW delay
+     ↓
+Translate time / feedback / mix
+
+🟠 88. Save reusable MPC FX chains
+
+FULL/PARTIAL
+
+Long-running MPC feature-request discussions have included reusable FX chains, improved navigation and MIDI/CC naming.
+
+🟠 89. Automatic gain staging between MPC and DAW
+
+FULL
+
+🟠 90. Loudness/headroom warnings before export
+
+FULL
+
+---
+
+91–100 — Reliability, Diagnostics & Workflow Intelligence
+
+🔴 91. Universal MPC diagnostic utility
+
+FULL
+
+One screen:
+
+MPC                  CONNECTED
+Firmware             3.9
+USB MIDI             OK
+Audio                OK
+Buffer               HIGH LATENCY
+Sample rate          MATCHED
+Project              2 missing files
+DAW                   Cubase detected
+Plugin                loaded
+Clock                 2.8 ms offset
+
+This by itself could be useful.
+
+---
+
+🔴 92. Firmware ↔ Desktop version compatibility checker
+
+FULL
+
+MPC 3.9 Desktop currently requires compatible MPC firmware to recognise supported hardware, which makes version detection valuable.
+
+---
+
+🟠 93. Audio-interface compatibility checker
+
+FULL
+
+Current MPC firmware release notes have documented compatibility errors with particular external audio interfaces.
+
+---
+
+🟠 94. Driver/service conflict detection
+
+FULL
+
+---
+
+🟠 95. Plug-in dependency scanner
+
+FULL
+
+Before moving computer → standalone:
+
+Project requires:
+
+Mini D          available
+Jura            available
+Serum           NOT AVAILABLE
+Kontakt         NOT AVAILABLE
+FX Rack 4       available
+
+Then offer:
+
+Freeze unsupported tracks.
+
+---
+
+🔴 96. Plug-in portability manager
+
+FULL/PARTIAL
+
+Users transferring projects between computers or between standalone/desktop can run into missing plug-ins and mismatched environments.
+
+Your program can package or render where licensing permits.
+
+---
+
+🟠 97. MPC project health checker
+
+FULL
+
+Before opening:
+
+Project file       valid
+ProjectData        valid
+Samples            119/120
+Plugins            8/9
+Sequences          valid
+Audio files        valid
+Storage            sufficient
+
+WARNING:
+Snare_04.wav missing
+
+---
+
+🔴 98. Automatic recovery snapshots
+
+FULL
+
+Protect against:
+
+- corrupted project;
+- accidental overwrite;
+- crash;
+- failed conversion;
+- bad sync.
+
+---
+
+🟠 99. Workflow assistant
+
+FULL
+
+The application detects what the musician is trying to do.
+
+For example:
+
+«MPC project appears complete. Prepare it for Cubase?»
+
+Then automatically:
+
+✓ Save project
+✓ Back up
+✓ Render required stems
+✓ Export editable MIDI
+✓ Collect samples
+✓ Create Cubase project
+✓ Create tracks
+✓ Name tracks
+✓ Set tempo
+✓ Import arrangement
+✓ Map MPC controller
+✓ Open Cubase
+
+---
+
+🔴 100. THE BIG ONE — Remove the Boundary Between “Working on the MPC” and “Working on the Computer”
+
+FULL/PARTIAL
+
+This is really the umbrella problem beneath almost everything above.
+
+Currently musicians often think in separate stages:
+
+MAKE BEAT ON MPC
+       ↓
+STOP
+       ↓
+SAVE
+       ↓
+EXPORT
+       ↓
+TRANSFER
+       ↓
+OPEN COMPUTER
+       ↓
+IMPORT
+       ↓
+REBUILD
+       ↓
+CONTINUE
+
+Your product changes the mental model to:
+
+             ONE PROJECT
+
+                 │
+       ┌─────────┴─────────┐
+       │                   │
+      MPC ⇄⇄⇄ BRIDGE ⇄⇄⇄ DAW
+       │                   │
+       └─────────┬─────────┘
+                 │
+             ONE SESSION
+
+That is much bigger than an exporter.
+
+---
+
+The 100 Problems Actually Collapse Into About 12 Core Problems
+
+This is important because you do not need to build 100 separate programs.
+
+Core 1 — Project Translation
+
+Solves roughly:
+
+1, 3, 7, 10, 11, 61–70.
+
+---
+
+Core 2 — Session Synchronisation
+
+Solves:
+
+2, 7, 12, 16, 20, 100.
+
+---
+
+Core 3 — Stem/Audio Engine
+
+Solves:
+
+4, 5, 14, 21–30.
+
+---
+
+Core 4 — MIDI Translation Engine
+
+Solves:
+
+6, 15, 31–40.
+
+---
+
+Core 5 — Timing Engine
+
+Solves:
+
+9, 41–50.
+
+---
+
+Core 6 — Controller Bridge
+
+Solves:
+
+2, 8, 51–60.
+
+---
+
+Core 7 — Project Compatibility Engine
+
+Solves:
+
+61–70.
+
+---
+
+Core 8 — Asset/Sample Manager
+
+Solves:
+
+13, 17, 71–80.
+
+---
+
+Core 9 — Automation/FX Translation
+
+Solves:
+
+19, 81–90.
+
+---
+
+Core 10 — Diagnostic Engine
+
+Solves:
+
+18, 53, 91–97.
+
+---
+
+Core 11 — Backup/Recovery System
+
+Solves:
+
+16, 17, 63, 80, 98.
+
+---
+
+Core 12 — Workflow Automation Agent
+
+Solves:
+
+99 and ties the other eleven together.
+
+---
+
+What This Means for the Product
+
+You were correct when you said many of the “100 issues” would actually be connected.
+
+They are.
+
+I would therefore not build 100 fixes independently.
+
+I would build roughly 12 engines/modules, and those twelve modules address most of the hundred problems.
+
+---
+
+Recommended Product Architecture
+
+                    MPC BRIDGE
+                        │
+ ┌──────────────────────┼────────────────────────┐
+ │                      │                        │
+Device Engine       Session Engine          DAW Engine
+ │                      │                        │
+USB/MIDI            Project Model          Cubase
+Audio               State Sync             Reason
+Storage             Versioning             Ableton
+Discovery           Project Diff           Logic
+Profiles            Recovery               FL Studio
+                                            Reaper
+                                            Studio One
+                                            etc.
+ │                      │                        │
+ └──────────────────────┼────────────────────────┘
+                        │
+       ┌────────────────┼─────────────────┐
+       │                │                 │
+   MIDI Engine      Audio Engine      Asset Engine
+       │                │                 │
+mapping            stems             samples
+clock              capture           relinking
+CC                 latency           backups
+automation         routing           dependencies
+       │                │                 │
+       └────────────────┼─────────────────┘
+                        │
+               Automation Agent
+
+---
+
+Native Foundation
+
+For this particular program I would start at the low-level foundation with approximately:
+
+C++
+├── USB/device abstraction
+├── MIDI engine
+├── audio engine
+├── project parser
+├── session model
+├── sync engine
+├── timing engine
+├── device-profile API
+├── DAW-adapter API
+└── plug-in shared core
+
+Then put your interfaces on top:
+
+C++ Core
+   │
+   ├── Standalone Desktop App
+   ├── VST3
+   ├── AU
+   ├── CLAP
+   ├── Background Service
+   └── Future DAW Integration
+
+So the VST is one interface to the engine, rather than being the entire program.
+
+---
+
+Most Important Top-20 Build Set
+
+If the question is:
+
+«“What should actually go into the first serious version so competitors can't simply say ‘but it doesn't do X’?”»
+
+I would combine your top twenty into:
+
+1. 🔴 MPC auto-detection.
+2. 🔴 Project parsing.
+3. 🔴 DAW-project generation.
+4. 🔴 Pad → individual tracks.
+5. 🔴 Stem capture/export.
+6. 🔴 MIDI preservation.
+7. 🔴 Sequence → arrangement conversion.
+8. 🔴 Live MIDI/controller bridge.
+9. 🔴 Bidirectional supported-parameter sync.
+10. 🔴 Project Total Recall.
+11. 🔴 Incremental synchronisation.
+12. 🔴 Sample dependency management.
+13. 🔴 MPC2/MPC3 compatibility analyser.
+14. 🔴 Latency calibration.
+15. 🔴 Timing alignment.
+16. 🔴 Backup/version history.
+17. 🔴 Wet/dry/FX-state preservation.
+18. 🔴 Universal DAW adapters.
+19. 🔴 Diagnostics.
+20. 🔴 Device-profile SDK.
+
+That is no longer a tiny utility.
+
+It becomes a legitimate MPC Companion Platform / MPC-to-DAW Integration Layer.
+
+---
+
+One Particularly Good Business Decision
+
+Do not make the software fundamentally dependent on one MPC model.
+
+Instead:
+
+CORE
+ │
+ └── Device Profile
+       │
+       ├── MPC Sample
+       ├── MPC One
+       ├── MPC One+
+       ├── MPC Live
+       ├── MPC Live II
+       ├── MPC Live III
+       ├── MPC X
+       ├── MPC Key
+       ├── MPC Studio
+       ├── MPC1000
+       └── future devices
+
+Your own MPC Sample should simply be the first reference implementation, because you physically have one to test against.
+
+Then the previous research slots above this:
+
+UNIVERSAL HARDWARE SESSION BRIDGE
+│
+├── AKAI MODULE
+│   └── these 100 MPC problems
+│
+├── ROLAND MODULE
+│   └── SP-404 problems
+│
+├── ELEKTRON MODULE
+│
+├── MASCHINE MODULE
+│
+├── NOVATION MODULE
+│
+└── COMMUNITY DEVICE MODULES
+
+So these aren't two competing research projects.
+
+They combine perfectly:
+
+Previous research = universal problems.
+
+This research = MPC-specific problems.
+
+And after doing the MPC-specific pass, your original idea remains in the top group of problems worth attacking rather than being an unusual issue that only affects your personal workflow.The particularly useful finding here is that Akai’s newer releases are themselves fixing individual symptoms—MIDI export events, Arrange editing, FX Rack loading, project importing, clip timing, automation and Sample-project compatibility—while the community still discusses the larger workflow between systems. That supports designing your product one level above individual firmware bugs: a compatibility/synchronisation layer that can continue working as Akai changes MPC firmware underneath it. 
+
+Universal MPC + Hardware-to-DAW Bridge
+
+Merged Master 100-Problem Research & Product Opportunity Specification
+
+This is the combined and de-duplicated version of the two previous research passes:
+
+1. Universal hardware / sampler / drum-machine / groovebox → DAW problems
+2. MPC-specific software, workflow, project, MIDI, audio and DAW-integration problems
+
+Where both searches identified essentially the same problem, they have been merged into one stronger requirement rather than counted twice.
+
+The resulting list is therefore intended to become the master problem database for the software product.
+
+---
+
+1. PRODUCT DEFINITION
+
+The product is larger than a conventional VST.
+
+A more accurate working classification is:
+
+Universal Hardware Session Bridge
+
+It can eventually ship as:
+
+- standalone desktop application;
+- VST3 plug-in;
+- AU plug-in;
+- CLAP plug-in;
+- potentially AAX;
+- background service;
+- device-management utility;
+- project translator;
+- MIDI bridge;
+- audio/stem bridge;
+- DAW integration component;
+- later, a native subsystem inside the full DAW.
+
+Its purpose is:
+
+MPC / SP-404 / Maschine / Elektron / Circuit / Other Hardware
+                         ⇅
+              UNIVERSAL BRIDGE ENGINE
+                         ⇅
+Cubase / Reason / Ableton / FL / Logic / Reaper / Studio One / etc.
+
+---
+
+2. COLOUR SYSTEM
+
+Colour| Priority / Meaning
+🔴 RED| Critical opportunity. Major unresolved pain point and strong product differentiator.
+🟠 ORANGE| High-value problem. Existing solutions are partial, fragmented or manufacturer-specific.
+🟡 YELLOW| Useful secondary capability. Valuable but unlikely to sell the product alone.
+🔵 BLUE| Standard functionality. Needed for completeness but not a major differentiator.
+🟢 GREEN| Convenience / optimisation / lower priority.
+🟣 PURPLE| Primarily belongs in the larger full DAW, although bridge integration may expose it.
+⚫ BLACK| Manufacturer firmware/API/protocol dependent. Your software can only partly control it.
+⚪ GREY| Physical/device limitation that software can only work around.
+
+---
+
+3. BUILD CLASSIFICATION
+
+Each issue can also be classified as:
+
+- BRIDGE — should be solved by this product.
+- DAW — primarily belongs in your full DAW.
+- HYBRID — bridge can solve part; DAW/firmware solves the rest.
+- FIRMWARE — manufacturer cooperation may be required.
+- WORKAROUND — software can compensate for a hardware limitation.
+- STANDARD — necessary parity feature.
+
+---
+
+4. SOURCE LINEAGE
+
+To preserve both previous searches:
+
+- [BOTH] = found in both the universal and MPC research.
+- [MPC] = primarily MPC-specific.
+- [UNIVERSAL] = applies across multiple hardware ecosystems.
+
+---
+
+THE MASTER TOP 10
+
+These should define the heart of the first product.
+
+---
+
+🔴 1. Automatic Hardware Project → DAW Project Reconstruction
+
+[BOTH] — BRIDGE
+
+This remains the strongest opportunity.
+
+Load:
+
+MPC: "My Song"
+
+and automatically construct:
+
+DAW PROJECT: My Song
+
+Drums
+ ├─ Kick
+ ├─ Snare
+ ├─ Hi-Hat
+ └─ Percussion
+
+Bass
+
+Samples
+ ├─ Sample 01
+ ├─ Sample 02
+ └─ Sample 03
+
+Vocals
+
+MIDI
+
+Automation
+
+FX
+
+Arrangement
+
+Not merely:
+
+«Export some WAV files.»
+
+The software should understand the project.
+
+---
+
+🔴 2. Real-Time Bidirectional Hardware ⇄ DAW Synchronisation
+
+[BOTH] — HYBRID
+
+Hardware ⇄ Bridge ⇄ DAW
+
+Changes should travel both ways where supported:
+
+- pads;
+- knobs;
+- faders;
+- MIDI;
+- velocity;
+- mutes;
+- solos;
+- transport;
+- sequences;
+- automation;
+- mixer settings;
+- compatible parameters;
+- program changes.
+
+---
+
+🔴 3. Automatic Matching Project / Total Recall
+
+[BOTH] — BRIDGE
+
+Hardware loads:
+
+Summer Beat
+
+Bridge detects:
+
+Summer Beat.bridge
+Summer Beat.cpr
+Summer Beat.reason
+Summer Beat.als
+
+If one already exists:
+
+open and synchronise it.
+
+If none exists:
+
+create one automatically.
+
+---
+
+🔴 4. Intelligent Stem / Track Reconstruction
+
+[BOTH] — BRIDGE
+
+Automatically turn:
+
+Drum Program A
+
+into:
+
+Kick
+Snare
+Closed Hat
+Open Hat
+Clap
+Perc
+Sample
+FX
+
+with proper timing and naming.
+
+---
+
+🔴 5. Universal Device-Profile Architecture
+
+[BOTH] — BRIDGE
+
+The core should not know only one MPC.
+
+Device Layer
+│
+├── Akai MPC
+├── Roland SP
+├── Elektron
+├── Maschine
+├── Novation
+├── Legacy Samplers
+└── Community Profiles
+
+Your MPC Sample becomes device profile #1, not the entire product.
+
+---
+
+🔴 6. Preserve Editable MIDI & Performance Data
+
+[BOTH] — BRIDGE
+
+Do not flatten everything into audio.
+
+Preserve where available:
+
+- note;
+- pad;
+- velocity;
+- note duration;
+- microtiming;
+- swing;
+- CC;
+- pitch;
+- aftertouch;
+- pressure;
+- automation;
+- sequence position;
+- MIDI channel;
+- bank;
+- program.
+
+---
+
+🔴 7. Sequence / Song Mode → DAW Arrangement Translation
+
+[BOTH] — BRIDGE
+
+Example:
+
+SEQ 01 Intro      → Bars 1–8
+SEQ 02 Verse      → Bars 9–24
+SEQ 03 Chorus     → Bars 25–40
+SEQ 04 Verse 2    → Bars 41–56
+SEQ 05 Outro      → Bars 57–64
+
+This eliminates another major manual reconstruction step.
+
+---
+
+🔴 8. Incremental Synchronisation
+
+[BOTH] — BRIDGE
+
+If only two things changed:
+
+Kick       unchanged
+Snare      CHANGED
+Bass       unchanged
+FX         unchanged
+Sequence 2 CHANGED
+
+only synchronise those changes.
+
+This turns the system from:
+
+export/import
+
+into:
+
+sync.
+
+---
+
+🔴 9. Automatic Timing, Clock & Latency Calibration
+
+[BOTH] — BRIDGE
+
+Measure the actual system.
+
+Test Signal
+     ↓
+Hardware
+     ↓
+Return Signal
+     ↓
+Measured offset = 11.72 ms
+
+Then automatically align recordings and MIDI.
+
+---
+
+🔴 10. Universal Neutral Session Model
+
+[BOTH] — BRIDGE
+
+Create a neutral internal project representation.
+
+Example:
+
+Project
+│
+├── Devices
+├── Tracks
+├── Pads
+├── Programs
+├── Samples
+├── MIDI
+├── Audio
+├── Automation
+├── Mixer
+├── FX
+├── Sends
+├── Sequences
+├── Arrangement
+├── Routing
+├── Tempo
+└── Metadata
+
+This is potentially the most important architectural component of the entire system.
+
+---
+
+TOP 20
+
+---
+
+🔴 11. Automatic Device Detection & Capability Discovery
+
+[BOTH] — BRIDGE
+
+Example:
+
+AKAI MPC SAMPLE
+
+USB MIDI               ✓
+USB Audio              2 channels
+Project Parsing        ✓
+Multichannel USB       ✗
+Controller Mode        ✗
+Storage Access         ✓
+Automated Stem Capture ✓
+Live Parameter Sync    Partial
+
+The system adapts itself.
+
+---
+
+🔴 12. Universal DAW Adapter Layer
+
+[BOTH] — BRIDGE
+
+Session Engine
+      │
+DAW Adapter API
+      │
+├── Cubase
+├── Reason
+├── Ableton
+├── Logic
+├── FL Studio
+├── Reaper
+├── Studio One
+└── Pro Tools
+
+---
+
+🔴 13. Automated Capture for Stereo-Only Devices
+
+[BOTH] — WORKAROUND
+
+For hardware that cannot output 16 separate USB tracks:
+
+Solo Kick
+Record
+↓
+Solo Snare
+Record
+↓
+Solo Hat
+Record
+↓
+Solo Bass
+Record
+
+automatically.
+
+---
+
+🔴 14. Project Difference & Conflict Detection
+
+[BOTH] — BRIDGE
+
+Example:
+
+MPC changed:
+- Snare
+- Sequence 3
+- Pad volume
+
+DAW changed:
+- Bass MIDI
+- Track EQ
+
+Options:
+
+- Merge
+- MPC wins
+- DAW wins
+- Duplicate version
+- Review changes
+
+---
+
+🔴 15. Missing Sample Detection & Automatic Relinking
+
+[BOTH] — BRIDGE
+
+Search:
+
+- SD card;
+- internal storage;
+- USB;
+- SSD;
+- computer;
+- sample library.
+
+Then repair missing references automatically.
+
+---
+
+🔴 16. Automatic Backup & Version History
+
+[BOTH] — BRIDGE
+
+Song v1
+Song v2
+Song before DAW
+Song after MPC edit
+Song before stem render
+Song recovered
+
+---
+
+🔴 17. Universal MIDI / Controller Mapping Engine
+
+[BOTH] — BRIDGE
+
+Profiles can automatically map:
+
+MPC Sample → Reason
+MPC One → Cubase
+SP-404 → Ableton
+Digitakt → Logic
+Maschine → Reaper
+
+---
+
+🔴 18. Effects / Mixer State Preservation
+
+[BOTH] — HYBRID
+
+Keep:
+
+- effect names;
+- wet/dry;
+- levels;
+- pan;
+- send amounts;
+- return buses;
+- automation;
+- routing;
+- parameter values.
+
+If an effect cannot be translated:
+
+keep both:
+
+DRY
+WET
+FX metadata
+
+---
+
+🔴 19. Diagnostics & Compatibility Engine
+
+[BOTH] — BRIDGE
+
+One dashboard:
+
+MPC Connected          YES
+Firmware               3.x
+DAW                    Cubase
+USB MIDI               OK
+USB Audio              OK
+Latency                9.3 ms
+Clock                   Synced
+Missing Samples        2
+Plugin Dependencies    1 missing
+Project Compatibility  94%
+
+---
+
+🔴 20. Shared Core + App + Plug-in Architecture
+
+[BOTH] — BRIDGE
+
+C++ Engine
+│
+├── Background Service
+├── Standalone App
+├── VST3
+├── AU
+├── CLAP
+├── DAW Adapter
+└── Future Full DAW
+
+This avoids building the same system repeatedly.
+
+---
+
+GROUP A — PROJECT & SESSION TRANSLATION
+
+1–10
+
+1. 🔴 ★ Automatic hardware project → DAW reconstruction. [BOTH]
+2. 🔴 ★ Bidirectional project/state sync. [BOTH]
+3. 🔴 ★ Automatic matching computer project. [BOTH]
+4. 🔴 ★ Track/stem reconstruction. [BOTH]
+5. 🔴 ★ Universal project parser. [BOTH]
+6. 🔴 ★ Preserve MIDI rather than flattening everything. [BOTH]
+7. 🔴 ★ Song/sequence → DAW arrangement. [BOTH]
+8. 🔴 ★ Incremental synchronisation. [BOTH]
+9. 🔴 ★ Project difference/conflict engine. [BOTH]
+10. 🔴 ★ Neutral universal session format. [BOTH]
+
+---
+
+GROUP B — AUDIO, STEMS & TRACK TRANSFER
+
+11–20
+
+11. 🔴 ★ Individual pad → DAW track extraction. [BOTH]
+12. 🔴 ★ Automatic separated stem generation. [BOTH]
+13. 🔴 ★ Automated capture for stereo-output equipment. [BOTH]
+14. 🟠 Detect silent exported stems. [MPC]
+15. 🟠 Detect missing stem exports. [MPC]
+16. 🟠 Normalise all stem lengths. [MPC]
+17. 🟠 Correct start-point alignment. [BOTH]
+18. 🟠 Preserve reverb/delay tails. [BOTH]
+19. 🟠 Export wet + dry versions. [MPC]
+20. 🟠 Automatically rebuild submix/bus relationships. [BOTH]
+
+---
+
+GROUP C — MIDI & PERFORMANCE TRANSLATION
+
+21–30
+
+21. 🔴 ★ Preserve note velocity. [BOTH]
+22. 🔴 ★ Preserve microtiming. [BOTH]
+23. 🔴 ★ Preserve swing/groove. [BOTH]
+24. 🟠 Preserve note duration. [MPC]
+25. 🟠 Preserve CC automation. [BOTH]
+26. 🟠 Preserve aftertouch/pressure. [MPC]
+27. 🟠 Preserve pitch bend. [MPC]
+28. 🟠 Translate manufacturer-specific pad note maps. [BOTH]
+29. 🔴 Automatic MIDI channel/routing configuration. [BOTH]
+30. 🟠 MIDI Thru / merge / split manager. [BOTH]
+
+---
+
+GROUP D — CONTROLLER & PARAMETER SYNCHRONISATION
+
+31–40
+
+31. 🔴 ★ Hardware knob → DAW parameter automatically. [BOTH]
+32. 🔴 ★ DAW parameter → hardware parameter where supported. [BOTH]
+33. 🔴 Automatic controller profile selection. [BOTH]
+34. 🔴 Automatic mapping when selected DAW track changes. [MPC]
+35. 🟠 Pad-pressure mapping. [MPC]
+36. 🟠 Fader mapping. [UNIVERSAL]
+37. 🟠 Encoder/knob scaling normalisation. [UNIVERSAL]
+38. 🟠 Translate NRPN/CC/device-specific messages. [UNIVERSAL]
+39. 🔴 User-created hardware profiles. [BOTH]
+40. 🔴 Community device-profile SDK. [UNIVERSAL]
+
+---
+
+GROUP E — CLOCK, LATENCY & TRANSPORT
+
+41–50
+
+41. 🔴 ★ Automatic round-trip latency calibration. [BOTH]
+42. 🔴 ★ Sample-accurate stem placement. [BOTH]
+43. 🔴 Detect timing drift. [BOTH]
+44. 🔴 Correct long-session drift. [BOTH]
+45. 🟠 MIDI-clock jitter compensation. [BOTH]
+46. 🟠 Audio latency compensation. [MPC]
+47. 🔴 Multi-device clock alignment. [UNIVERSAL]
+48. 🟠 Play/stop/continue synchronisation. [BOTH]
+49. 🟠 Tempo-change translation. [MPC]
+50. 🟠 Time-signature compatibility checking. [MPC]
+
+---
+
+GROUP F — DEVICE DISCOVERY, USB & DRIVER MANAGEMENT
+
+51–60
+
+51. 🔴 ★ Plug-and-play hardware discovery. [BOTH]
+52. 🔴 ★ Automatic capability detection. [BOTH]
+53. 🟠 Reconnect devices automatically after USB interruption. [BOTH]
+54. 🟠 Driver conflict detection. [BOTH]
+55. 🟠 Audio-interface conflict detection. [MPC]
+56. 🟠 MIDI-device collision detection. [UNIVERSAL]
+57. 🟠 Firmware/software version checker. [BOTH]
+58. 🟠 USB bandwidth / hub diagnostics. [UNIVERSAL]
+59. 🟠 Buffer-size optimiser. [MPC]
+60. 🔴 Unified connection diagnostics screen. [BOTH]
+
+---
+
+GROUP G — FILES, SAMPLES & ASSETS
+
+61–70
+
+61. 🔴 ★ Project dependency collection. [BOTH]
+62. 🔴 ★ Missing-sample repair. [BOTH]
+63. 🟠 Sample-path relinking. [BOTH]
+64. 🟠 Search SD + USB + SSD + computer simultaneously. [MPC]
+65. 🟠 Duplicate-sample detection. [BOTH]
+66. 🟠 Unused-sample cleanup. [MPC]
+67. 🟡 Automatic sample tagging. [BOTH]
+68. 🟡 BPM/key/type analysis. [UNIVERSAL]
+69. 🟠 One-click collect-all-project-assets. [MPC]
+70. 🔴 Portable project archive format. [BOTH]
+
+---
+
+GROUP H — EFFECTS, MIXER & AUTOMATION
+
+71–80
+
+71. 🔴 ★ Mixer-state translation. [BOTH]
+72. 🔴 ★ MPC/hardware automation → DAW automation. [BOTH]
+73. 🟠 DAW automation → supported hardware automation. [MPC]
+74. 🟠 Preserve FX-chain state. [BOTH]
+75. 🟠 Preserve send/return structure. [BOTH]
+76. 🟠 Preserve mute/solo automation. [MPC]
+77. 🟠 Record live hardware FX gestures as automation. [MPC]
+78. 🟠 Hardware FX → closest DAW equivalent translator. [MPC]
+79. 🟠 Automatic gain staging. [MPC]
+80. 🟠 Headroom / clipping / loudness warnings. [MPC]
+
+---
+
+GROUP I — MPC-SPECIFIC COMPATIBILITY
+
+81–90
+
+81. 🔴 MPC 2 → MPC 3 project analyser. [MPC]
+82. 🔴 MPC 3 → older MPC compatibility analyser. [MPC]
+83. 🔴 Safe automatic duplicate before conversion. [MPC]
+84. 🟠 Program/track-architecture converter. [MPC]
+85. 🟠 Render unsupported features automatically. [MPC]
+86. 🟠 Preserve legacy sequence structure. [MPC]
+87. 🟠 Legacy MPC project importer. [MPC]
+88. 🔴 Cross-MPC-model compatibility report. [MPC]
+89. 🔴 Plug-in dependency scanner. [MPC]
+90. 🔴 Freeze/render computer-only plug-ins for standalone transfer. [MPC]
+
+Example:
+
+MPC Live III       100%
+MPC X              100%
+MPC One             94%
+MPC Sample          41%
+MPC2500             30%
+MPC1000             26%
+
+---
+
+GROUP J — MPC SAMPLE-SPECIFIC SOFTWARE WORKAROUNDS
+
+91–100
+
+91. 🔴 MPC Sample project → DAW reconstruction. [MPC]
+92. 🔴 Automated MPC Sample per-pad stem capture. [MPC]
+93. 🔴 MPC Sample project matching / Total Recall. [MPC]
+94. 🔴 MPC Sample DAW controller mapping layer. [MPC]
+95. 🟠 Work around SD-access workflow interruptions where possible. [MPC]
+96. 🟠 Automatic MPC Sample project backup. [MPC]
+97. 🟠 Translate MPC Sample sequences/automation into editable DAW data. [MPC]
+98. 🟠 Automatic MPC Sample project health check. [MPC]
+99. 🔴 Automatic “Finish This MPC Project in My DAW” workflow. [MPC]
+100. 🔴 Remove the conceptual boundary between MPC standalone and computer production. [BOTH]
+
+---
+
+5. THE MASTER LIST COLLAPSES INTO 12 SOFTWARE ENGINES
+
+This is the most important finding from merging both research sets.
+
+You do not need 100 unrelated programs.
+
+Most of the hundred issues can be solved by approximately twelve major subsystems.
+
+---
+
+ENGINE 1 — Device Abstraction Engine
+
+Solves:
+
+- 5
+- 11
+- 28
+- 33
+- 39
+- 40
+- 51
+- 52
+- 57
+
+Responsibilities:
+
+identify device
+identify firmware
+identify capabilities
+load profile
+expose unified internal API
+
+---
+
+ENGINE 2 — Universal Session Model
+
+Solves:
+
+- 1
+- 3
+- 7
+- 8
+- 10
+- 14
+- 70
+- 100
+
+This should become the canonical internal project representation.
+
+---
+
+ENGINE 3 — Project Parser / Converter
+
+Solves:
+
+- 1
+- 3
+- 7
+- 81–90
+- 91
+- 97
+
+It understands:
+
+MPC project
+SP project
+Elektron project
+Future hardware formats
+
+and converts them into the neutral session model.
+
+---
+
+ENGINE 4 — Audio & Stem Engine
+
+Solves:
+
+- 4
+- 11–20
+- 41
+- 42
+- 92
+
+Responsibilities:
+
+- capture;
+- render;
+- verify;
+- align;
+- label;
+- route;
+- stem;
+- wet/dry;
+- submix;
+- recovery.
+
+---
+
+ENGINE 5 — MIDI Translation Engine
+
+Solves:
+
+- 6
+- 21–30
+- 72
+- 73
+- 97. 
+
+---
+
+ENGINE 6 — Hardware Control Engine
+
+Solves:
+
+- 2
+- 17
+- 31–40
+- 48
+- 94. 
+
+This is the part closest to what your friend was describing when talking about moving knobs and controlling the DAW.
+
+---
+
+ENGINE 7 — Synchronisation Engine
+
+Solves:
+
+- 2
+- 3
+- 8
+- 14
+- 16
+- 93
+- 100. 
+
+Architecture:
+
+Hardware State
+      ⇅
+ Sync Engine
+      ⇅
+Session State
+      ⇅
+ DAW State
+
+---
+
+ENGINE 8 — Timing Engine
+
+Solves:
+
+- 9
+- 41–50.
+
+Responsibilities:
+
+- latency;
+- drift;
+- clock;
+- alignment;
+- transport;
+- tempo.
+
+---
+
+ENGINE 9 — Asset Manager
+
+Solves:
+
+- 15
+- 16
+- 61–70
+- 96. 
+
+---
+
+ENGINE 10 — Mix / FX / Automation Translator
+
+Solves:
+
+- 18
+- 71–80.
+
+---
+
+ENGINE 11 — Compatibility & Diagnostic Engine
+
+Solves:
+
+- 19
+- 51–60
+- 81–90
+- 98. 
+
+This becomes particularly valuable commercially because many users struggle to identify whether the problem is:
+
+MPC
+firmware
+driver
+DAW
+USB
+MIDI
+audio interface
+project file
+plug-in
+sample
+routing
+latency
+
+Your software can tell them.
+
+---
+
+ENGINE 12 — Workflow Automation / Assistant
+
+Solves:
+
+- 20
+- 93
+- 99
+- 100
+
+Example user action:
+
+FINISH IN CUBASE
+
+The system automatically performs:
+
+1. Detect MPC
+2. Detect current project
+3. Backup project
+4. Parse project
+5. Find missing dependencies
+6. Analyse tracks/pads
+7. Export MIDI
+8. Capture required audio
+9. Export wet/dry FX
+10. Align stems
+11. Create Cubase session
+12. Set BPM
+13. Set time signature
+14. Create track folders
+15. Import tracks
+16. Name tracks
+17. Restore mixer structure
+18. Restore automation
+19. Map MPC controls
+20. Start live sync
+
+One button.
+
+That is the kind of workflow which could make the product feel fundamentally different.
+
+---
+
+6. HARDWARE CAPABILITY TIERS
+
+Because not every device exposes the same information, use integration tiers.
+
+---
+
+TIER A — Deep Integration
+
+Hardware exposes:
+
+- project data;
+- MIDI;
+- parameters;
+- multichannel audio;
+- transport;
+- automation.
+
+Potential experience:
+
+Hardware ⇄ DAW
+almost completely mirrored
+
+---
+
+TIER B — Project + MIDI + Stereo USB Audio
+
+Likely relevant to devices such as MPC Sample.
+
+Software can still provide:
+
+- project parsing;
+- MIDI;
+- automation;
+- automated stem capture;
+- session reconstruction;
+- control mapping.
+
+---
+
+TIER C — MIDI + Analogue Audio
+
+No USB audio required.
+
+MIDI control
++
+audio-interface capture
++
+automatic solo/mute recording
+
+---
+
+TIER D — Legacy Device
+
+Limited computer integration.
+
+Use:
+
+- storage parsing;
+- MIDI;
+- analogue audio;
+- project conversion;
+- sample extraction;
+- automated recording.
+
+---
+
+7. WHAT SHOULD GO INTO THE STANDALONE BRIDGE NOW?
+
+Definitely include
+
+🔴 Device discovery
+🔴 MPC Sample support
+🔴 MPC family profile architecture
+🔴 project parser
+🔴 neutral session model
+🔴 stem capture
+🔴 MIDI export/import
+🔴 DAW reconstruction
+🔴 sequence translation
+🔴 controller mapping
+🔴 latency calibration
+🔴 project matching
+🔴 backup
+🔴 sample relinking
+🔴 diagnostics
+🔴 device-profile SDK
+
+---
+
+8. WHAT SHOULD LATER GO INTO YOUR FULL DAW?
+
+Some issues should be addressed by the bridge now but eventually become deeper features in the DAW:
+
+🟣 complete piano roll
+🟣 full audio editor
+🟣 clip launcher
+🟣 full mixer
+🟣 mastering suite
+🟣 plug-in hosting
+🟣 advanced time stretching
+🟣 sampler editor
+🟣 synth engines
+🟣 score editor
+🟣 arrangement editor
+🟣 advanced automation editing
+
+The bridge should feed those systems rather than reproduce the entire DAW today.
+
+---
+
+9. WHERE YOUR MPC SAMPLE FITS
+
+The first supported hardware should logically be:
+
+Akai MPC Sample
+
+because:
+
+1. you own it;
+2. you understand the problem personally;
+3. you can continuously test against real hardware;
+4. existing workflow limitations provide a good test case;
+5. it forces the bridge to deal with constrained hardware rather than relying on ideal multichannel USB.
+
+Development progression:
+
+Phase 1
+MPC Sample
+    ↓
+Phase 2
+Modern MPC Family
+    ↓
+Phase 3
+SP-404
+    ↓
+Phase 4
+Elektron
+    ↓
+Phase 5
+Maschine / Circuit / others
+    ↓
+Phase 6
+Community Profile SDK
+
+---
+
+10. COMPETITIVE POSITION
+
+Do not position it merely as:
+
+«MPC Stem Exporter.»
+
+That category already has solutions.
+
+Do not position it merely as:
+
+«MIDI Controller Mapper.»
+
+That category already has many solutions.
+
+Do not position it merely as:
+
+«MPC File Converter.»
+
+Again, partial solutions exist.
+
+Instead:
+
+One project. Hardware and DAW together.
+
+or technically:
+
+Universal Bidirectional Hardware Session & DAW Integration Platform
+
+It combines:
+
+- project conversion;
+- MIDI;
+- audio;
+- stems;
+- controller mapping;
+- sync;
+- timing;
+- diagnostics;
+- asset management;
+- compatibility;
+- Total Recall.
+
+---
+
+11. PRIORITY ARRANGEMENT
+
+🔴 RELEASE CORE — Must Be Designed From The Beginning
+
+1. Neutral session model
+2. Device abstraction
+3. MPC Sample profile
+4. Project parser
+5. DAW adapter API
+6. Stem/audio engine
+7. MIDI engine
+8. Synchronisation engine
+9. Timing engine
+10. Backup/version system
+11. Diagnostics
+12. Device profile SDK
+
+---
+
+🟠 RELEASE 1 HIGH-VALUE CAPABILITIES
+
+13. Wet/dry rendering
+14. submix reconstruction
+15. sample relinking
+16. project compatibility
+17. automatic mapping
+18. controller profiles
+19. automation translation
+20. project difference viewer
+
+---
+
+🟡 RELEASE 2 QUALITY-OF-LIFE
+
+- sample tagging;
+- sample classification;
+- duplicate cleanup;
+- loudness reports;
+- intelligent colour coding;
+- routing diagrams;
+- project organisation;
+- workflow suggestions.
+
+---
+
+🔵 STANDARD SUPPORT
+
+- WAV;
+- AIFF;
+- FLAC where appropriate;
+- MIDI;
+- MIDI clock;
+- drag/drop;
+- file browsing;
+- import/export;
+- keyboard shortcuts;
+- undo/redo;
+- configuration profiles.
+
+---
+
+12. FINAL MERGED CONCLUSION
+
+The two searches do not point toward two separate products.
+
+They point toward the same architecture at different levels.
+
+The MPC-specific research describes:
+
+«the immediate problems your first users experience.»
+
+The universal research describes:
+
+«how the same architectural problem affects the wider sampler/drum-machine/groovebox market.»
+
+Combined:
+
+                       YOUR PRODUCT
+                            │
+             Universal Hardware Session Bridge
+                            │
+        ┌───────────────────┼───────────────────┐
+        │                   │                   │
+     MPC Layer          DAW Layer        Universal Layer
+        │                   │                   │
+MPC Sample           Cubase              Roland
+MPC One              Reason              Elektron
+MPC Live             Ableton             Maschine
+MPC X                Logic               Novation
+Legacy MPC           FL Studio           Legacy gear
+        │                   │                   │
+        └───────────────────┼───────────────────┘
+                            │
+                     ONE SESSION CORE
+
+The original problem you identified—
+
+«“I want to plug my MPC in, load my song, have the computer recognise that song, reconstruct it properly, and let both sides remain synchronised rather than repeatedly switching modes and rebuilding everything.”»
+
+—remains the centre of the merged specification.
+
+But the merged research shows that it can be expanded into a substantially more valuable product by solving the underlying architectural problem rather than only the individual MPC Sample symptom.
+
+The 100 issues therefore reduce to approximately 12 reusable engines, with the MPC Sample as the first device implementation and the larger multi-device bridge as the scalable product.This merged version is the one I’d now treat as the master benchmark for this bridge project. The next useful step is to turn these 100 issues into a requirements matrix showing, for every item, MVP / V1 / V2 / DAW Later, technical difficulty, whether Akai cooperation is required, revenue value, competitive coverage, and which of the 12 engines actually implements it.
+
+You have the main product architecture, but several foundational layers are still missing. Some of these are more important than adding another device profile because, without them, the system could become difficult to scale once you support dozens of devices, DAWs and operating systems.
+
+The biggest missing piece is a protocol and capability abstraction layer between the physical device adapters and the session engine. Your bridge cannot assume that every machine exposes its project, parameters, audio and MIDI in the same way. Some expose MIDI only; some expose files; some use SysEx; some have proprietary USB protocols; some provide multichannel audio; others provide only stereo audio. The bridge needs to discover what is actually possible and select the appropriate strategy automatically.
+
+I would add the following to the master architecture:
+
+Priority	Missing subsystem	What it does
+
+🔴	Protocol Discovery Engine	Detects USB MIDI, MIDI 1/2, SysEx, HID, USB audio, mass storage, network protocols, proprietary protocols and project-file formats.
+🔴	Capability Negotiation Engine	Determines exactly what a connected device can read/write/control instead of assuming functionality.
+🔴	Universal Device API	Gives the rest of the program one common interface regardless of whether the hardware is MPC, SP-404, Digitakt, Maschine, etc.
+🔴	Canonical Parameter Model	Creates universal meanings for volume, pan, filter, mute, pad, scene, sequence, transport, etc. and maps manufacturer terminology into them.
+🔴	IPC / Inter-process Communication Layer	Connects the background service, standalone application, VST/AU/CLAP plug-ins and mobile interfaces without duplicating engines.
+🔴	Real-Time Audio Safety Layer	Keeps disk access, networking, UI, AI and project parsing away from the real-time audio thread so the plug-in cannot cause clicks/dropouts.
+🔴	DAW Capability Matrix	Tracks what Cubase, Reason, Ableton, Logic, FL Studio, Reaper, Pro Tools, etc. actually allow your bridge to create/control.
+🔴	Project Schema + Versioning	Defines the permanent neutral session format and how old bridge projects survive future changes.
+🔴	Transaction / Rollback Engine	Prevents a failed sync from damaging either the hardware project or DAW project.
+🔴	Offline/Conflict Sync Model	Handles changes made while hardware and computer were disconnected.
+🔴	Hardware Emulator/Test Harness	Lets you develop profiles without owning every drum machine and regression-test existing devices after updates.
+🔴	Adapter SDK	Allows manufacturers/community developers to add hardware and DAW integrations without touching the core.
+🟠	Driver/Audio Backend Abstraction	Windows ASIO/WASAPI, macOS CoreAudio, Linux ALSA/JACK/PipeWire, Android audio/MIDI backends.
+🟠	Network Transport Layer	Enables Ethernet/Wi-Fi/Bluetooth/network MIDI and eventually remote hardware operation.
+🟠	Plug-in State/Host Persistence	Makes DAW sessions remember bridge state correctly when reopening projects.
+🟠	Crash Recovery / Journaling	Continuously saves safe state so a crash during transfer does not destroy work.
+🟠	Permission/Security System	Protects project files, devices, remote connections and third-party profiles.
+🟠	Signing/Trust System for Device Profiles	Stops malicious community adapters from accessing files/hardware improperly.
+🟠	Update Compatibility Database	Knows which firmware, bridge, DAW and OS combinations work together.
+🟠	Automated Regression Testing	Tests every device/DAW adapter after core changes.
+🟠	Logging/Diagnostics/Trace Recorder	Captures USB/MIDI/audio/session events so bugs can be reproduced.
+🟠	Preset/Profile Migration Engine	Keeps users' mappings working when a device profile changes.
+🟠	Device Identity System	Distinguishes two identical MPCs/SP-404s connected simultaneously.
+🟠	Multi-device Session Engine	Allows MPC + SP-404 + keyboard + synth + mixer/controller to participate in one project simultaneously.
+🟠	Aggregate Routing Graph	Visually represents audio/MIDI/control routes between all connected equipment.
+🟠	Sample/Asset Hashing	Identifies the same sample even when renamed or moved.
+🟠	DAWproject Interchange Adapter	Gives you an existing neutral DAW interchange route where supported instead of reinventing every conversion.
+🟡	Mobile Companion Protocol	Lets phone/tablet control the desktop bridge without requiring the entire audio engine on the mobile device.
+🟡	Accessibility Layer	Screen readers, scalable UI, keyboard operation, contrast, touch targets and controller-only operation.
+🟡	Localization	Multiple languages for a worldwide hardware market.
+🟡	Optional Cloud Sync	Project/profile backup and synchronisation while retaining local-first operation.
+🟡	Plugin/Profile Marketplace	Community distribution of device mappings, translators and templates.
+🟡	Analytics/Problem Database	Anonymous opt-in reports showing which hardware/DAW combinations generate the most problems.
+
+
+A major missing operating-system target
+
+You listed Windows, macOS, Linux/Ubuntu, Android and ChromeOS.
+
+I would also explicitly add:
+
+iOS + iPadOS.
+
+For music production, iPad is too significant to leave out of the architecture, even if full support arrives after desktop.
+
+So the platform hierarchy should become:
+
+Platform Core
+│
+├── Desktop
+│   ├── Windows
+│   ├── macOS
+│   └── Linux
+│       ├── Ubuntu
+│       ├── Fedora
+│       └── other distributions
+│
+├── Tablet
+│   ├── iPadOS
+│   ├── Android
+│   ├── Windows
+│   └── ChromeOS
+│
+└── Mobile
+    ├── Android
+    └── iOS
+
+But importantly, feature parity does not mean identical implementation.
+
+Desktop might provide:
+
+Full hardware service
+VST3/AU/CLAP
+DAW reconstruction
+Audio capture
+USB control
+Project conversion
+
+while a phone initially provides:
+
+Remote controller
+Project browser
+Mixer
+Pad control
+Mapping editor
+Diagnostics
+Backup
+Device configuration
+
+Tablet could sit somewhere between the two.
+
+Another major thing missing: multiple devices at once
+
+Up to now we've mostly described:
+
+MPC ⇄ Bridge ⇄ DAW
+
+But the real system should eventually support:
+
+MPC
+           │
+SP-404 ────┤
+           │
+Digitakt ──┤
+           │
+Keyboard ──┤
+           ▼
+    UNIVERSAL BRIDGE
+           │
+       ┌───┴────┐
+       │        │
+     DAW      Tablet
+
+That matters because musicians rarely use only one device.
+
+Your session model therefore needs a device graph, not just a single device record.
+
+For example:
+
+Session
+│
+├── Device 01
+│   └── MPC Sample
+│
+├── Device 02
+│   └── SP-404MKII
+│
+├── Device 03
+│   └── MIDI Keyboard
+│
+├── Device 04
+│   └── Hardware Synth
+│
+└── Audio Interface
+
+Then the bridge understands that the keyboard may control the MPC, the MPC may sequence the synth, the synth returns through the audio interface, and everything ultimately belongs to the same song.
+
+You're also missing a protocol hierarchy
+
+I would add this underneath every device adapter:
+
+DEVICE
+   │
+   ▼
+Protocol Discovery
+   │
+   ├── USB MIDI
+   ├── MIDI 1.0
+   ├── MIDI 2.0
+   ├── MIDI SysEx
+   ├── USB Audio
+   ├── USB Storage
+   ├── HID
+   ├── Bluetooth MIDI
+   ├── RTP/network MIDI
+   ├── OSC
+   ├── Ethernet/Wi-Fi
+   ├── Project Files
+   └── Manufacturer Protocol
+          │
+          ▼
+Capability Negotiation
+          │
+          ▼
+Universal Device API
+
+That is important because the Universal Device API becomes the wall protecting your core from manufacturer differences.
+
+Your synchronization engine shouldn't care whether an SP-404 changed volume using SysEx while another device used MIDI CC.
+
+It should simply receive:
+
+setParameter(
+    device,
+    track,
+    Parameter::Volume,
+    0.72
+);
+
+The device adapter decides how to make that happen.
+
+One of the most important missing pieces: the emulator
+
+You cannot realistically buy every:
+
+MPC;
+
+Roland;
+
+Elektron;
+
+Yamaha;
+
+Korg;
+
+Maschine;
+
+Novation;
+
+Pioneer;
+
+Teenage Engineering;
+
+older sampler;
+
+groovebox.
+
+
+So build a Virtual Hardware Lab.
+
+For example:
+
+Virtual Device Simulator
+
+Device:
+Roland SP-404MKII
+
+Capabilities:
+✓ MIDI
+✓ USB audio
+✓ project storage
+✓ pads
+✓ FX parameters
+✓ transport
+
+Simulate:
+[Connect]
+[Disconnect]
+[Move knob]
+[Hit pad]
+[Change pattern]
+[Corrupt packet]
+[Latency 15ms]
+[Drop USB]
+
+Then every device profile can have automated tests.
+
+When someone submits:
+
+SP404MKII.profile
+
+your CI system can test whether it breaks:
+
+session sync;
+
+MIDI;
+
+routing;
+
+reconnect;
+
+project loading;
+
+automation;
+
+transport.
+
+
+That's how you eventually support hundreds of devices without the program becoming unstable.
+
+Your research database also needs another dimension
+
+Previously we had:
+
+100 Universal Problems
+
+plus:
+
+100 MPC Problems
+
+and eventually:
+
+100 SP-404 Problems
+
+etc.
+
+I would change the database schema to:
+
+Problem
+│
+├── Device
+├── Device Family
+├── Manufacturer
+├── OS
+├── DAW
+├── Severity
+├── Frequency
+├── Existing Solution
+├── Existing Competitor
+├── Software Solvable?
+├── Firmware Required?
+├── Hardware Limited?
+├── Engine Responsible
+├── MVP/V1/V2/Later
+├── Revenue Opportunity
+├── Development Difficulty
+├── Evidence Sources
+└── Status
+
+That becomes extremely useful.
+
+You might discover:
+
+> Issue #237 appears on MPC, SP-404, Digitakt and Maschine.
+
+
+
+Rather than four fixes, it tells you:
+
+> The Universal Routing Engine is missing functionality.
+
+
+
+That is exactly how the research should inform the engineering architecture.
+
+The architecture is therefore closer to this now
+
+UNIVERSAL HARDWARE SESSION BRIDGE
+                              │
+ ┌────────────────────────────┼────────────────────────────┐
+ │                            │                            │
+DEVICE WORLD              SESSION WORLD                DAW WORLD
+ │                            │                            │
+Protocol Discovery        Neutral Model              DAW Adapters
+Capability Engine         State Graph                Plugin Layer
+Device Profiles           Diff Engine                Project Writer
+Device SDK                Transactions               Automation API
+Virtual Devices           Versioning                 Host Integration
+ │                            │                            │
+ └────────────────────────────┼────────────────────────────┘
+                              │
+                        SHARED C++ CORE
+                              │
+       ┌──────────────────────┼────────────────────────┐
+       │                      │                        │
+    Audio                  MIDI                     Sync
+       │                      │                        │
+    Timing                 Assets                  Routing
+       │                      │                        │
+   Diagnostics            Recovery                Security
+                              │
+                     PLATFORM ABSTRACTION
+                              │
+       ┌──────────┬───────────┼──────────┬───────────┐
+     Windows    macOS       Linux      Android    Apple Mobile
+                                          │           │
+                                      ChromeOS       iOS/iPadOS
+
+The good news is that you are not missing another giant feature category like “build a DAW inside it.” The missing pieces are mostly the engineering layers that turn the concept from a good MPC utility into a genuinely scalable universal hardware integration platform.
+
+The three additions I would treat as absolutely non-negotiable before serious coding are Protocol Discovery + Capability Negotiation, the canonical session/parameter model, and the Virtual Hardware Test Lab. Without those, supporting device #2, #10 and #100 becomes progressively harder; with them, each additional machine mainly becomes another adapter/profile rather than another rewrite.
+
+Exactly. Mobile and tablet should be treated as real bridge hosts, not merely remote controls.
+
+If someone connects an MPC, SP-404, MIDI keyboard, groovebox, sampler or other supported hardware directly to an iPad, Android tablet or phone, your bridge should sit between that hardware and the mobile DAW in the same way it does on desktop.
+
+So the architecture becomes:
+
+Hardware
+   ⇅
+Universal Bridge
+   ⇅
+Mobile / Tablet DAW
+
+For example:
+
+MPC Sample
+   ⇅ USB-C
+Universal Bridge
+   ⇅
+FL Studio Mobile
+
+or:
+
+SP-404
+   ⇅ USB
+Universal Bridge
+   ⇅
+GarageBand / Logic-style mobile workflow
+
+or:
+
+MIDI Keyboard
+   ⇅
+Universal Bridge
+   ⇅
+Android DAW
+
+The important change is that there are really three operating modes.
+
+Mode	Example	Purpose
+
+Desktop Bridge	MPC ⇄ Windows ⇄ Cubase	Full integration
+Tablet/Mobile Bridge	MPC ⇄ iPad/Android ⇄ mobile DAW	Full bridge where OS/DAW permits
+Companion Mode	Phone ⇄ desktop bridge	Remote control/monitoring when the device isn't hosting the DAW
+
+
+So tablet/mobile shouldn't be artificially restricted to companion mode.
+
+Mobile/tablet need their own DAW-adapter layer
+
+Your DAW adapters should therefore be divided roughly like:
+
+DAW Adapter API
+│
+├── Desktop DAWs
+│   ├── Cubase
+│   ├── Reason
+│   ├── Ableton Live
+│   ├── FL Studio
+│   ├── Logic Pro
+│   ├── Reaper
+│   └── Studio One
+│
+├── iPad / iOS DAWs
+│   ├── GarageBand
+│   ├── Logic Pro for iPad
+│   ├── Cubasis
+│   ├── FL Studio Mobile
+│   ├── AUM
+│   └── other compatible hosts
+│
+├── Android DAWs
+│   ├── FL Studio Mobile
+│   ├── Cubasis
+│   └── other compatible hosts
+│
+└── ChromeOS / future platforms
+
+The bridge engine remains the same. What changes is the OS adapter and DAW adapter.
+
+There are several ways the bridge can interact with a mobile DAW
+
+Not every mobile DAW exposes the same integration hooks, so your bridge should support several methods.
+
+Level 1 — Plug-in integration
+
+Where the host supports compatible plug-in technologies, the bridge can appear inside the DAW.
+
+Conceptually:
+
+DAW
+ │
+Bridge Plugin
+ │
+Bridge Engine
+ │
+Hardware
+
+Level 2 — MIDI virtual-port integration
+
+If full plug-in integration isn't available:
+
+Hardware
+   ↓
+Bridge
+   ↓
+Virtual MIDI Port
+   ↓
+DAW
+
+This still allows:
+
+pads;
+
+notes;
+
+velocity;
+
+CC;
+
+transport;
+
+automation;
+
+controller mappings.
+
+
+Level 3 — Audio routing
+
+Where the OS supports it:
+
+Hardware USB Audio
+       ↓
+     Bridge
+       ↓
+Mobile DAW Track(s)
+
+If the hardware only provides stereo audio, your automated stem-capture system can still operate.
+
+Level 4 — Project/file translation
+
+Even if the mobile DAW exposes very little real-time control, the bridge can still potentially perform:
+
+MPC Project
+     ↓
+Bridge Session Model
+     ↓
+Audio + MIDI + metadata
+     ↓
+Mobile DAW
+
+So the integration degrades gracefully instead of becoming unsupported.
+
+
+---
+
+This means your capability system becomes even more important
+
+The bridge shouldn't say:
+
+> “Mobile supports everything.”
+
+
+
+Instead, it determines what the exact combination supports.
+
+Example:
+
+DEVICE
+MPC Sample
+
+HOST
+Android Tablet
+
+DAW
+FL Studio Mobile
+
+AVAILABLE
+✓ USB MIDI
+✓ Pad control
+✓ Velocity
+✓ MIDI recording
+✓ Stereo USB audio
+✓ Project parsing
+✓ Automated stem capture
+✓ Project backup
+
+LIMITED
+△ DAW project generation
+△ Parameter feedback
+△ Automation translation
+
+UNAVAILABLE
+✗ Desktop VST3 workflow
+
+Another combination may expose much more:
+
+DEVICE
+SP-404MKII
+
+HOST
+iPad
+
+DAW
+Compatible iPad host
+
+AVAILABLE
+✓ USB MIDI
+✓ USB audio
+✓ Transport
+✓ Controller mapping
+✓ Audio capture
+✓ Project management
+✓ Parameter sync
+...
+
+That's why the Capability Negotiation Engine I mentioned becomes essential.
+
+
+---
+
+Your universal matrix is actually 4-dimensional
+
+The software must evaluate:
+
+DEVICE
+   ×
+OPERATING SYSTEM
+   ×
+DAW
+   ×
+CONNECTION METHOD
+
+For example:
+
+MPC Sample
+× Android
+× FL Studio Mobile
+× USB-C
+
+is one capability profile.
+
+While:
+
+MPC Sample
+× Windows
+× Cubase
+× USB-C
+
+is another.
+
+And:
+
+SP-404MKII
+× iPadOS
+× GarageBand
+× USB-C
+
+is another.
+
+You shouldn't hard-code each combination manually.
+
+Instead:
+
+Device Capabilities
+        +
+OS Capabilities
+        +
+DAW Capabilities
+        +
+Transport Capabilities
+        ↓
+Effective Feature Set
+
+That calculation is done dynamically.
+
+
+---
+
+I'd add one more core engine
+
+We previously reduced everything to roughly twelve engines.
+
+This clarification warrants a 13th:
+
+🔴 Engine 13 — Host Capability & Routing Negotiator
+
+Its job is to determine:
+
+What hardware is connected?
+What OS am I running?
+What DAW is open?
+What plugin formats does it support?
+What virtual MIDI capabilities exist?
+What USB audio channels exist?
+What inter-app audio/routing is available?
+Can I create DAW tracks?
+Can I manipulate project files?
+Can I send parameter feedback?
+Can I receive parameters?
+
+Then it builds the best integration automatically.
+
+Conceptually:
+
+DEVICE PROFILE
+                    │
+                    ▼
+OS PROFILE ──► CAPABILITY NEGOTIATOR ◄── DAW PROFILE
+                    ▲
+                    │
+             CONNECTION PROFILE
+                    │
+                    ▼
+             INTEGRATION PLAN
+
+For the user, however, it should still look simple:
+
+> MPC Sample detected — FL Studio Mobile detected — Connect
+
+
+
+Then the bridge figures everything else out.
+
+That makes desktop, tablet and mobile equal target environments, while acknowledging that the technical capabilities available on each OS/DAW combination will differ.
