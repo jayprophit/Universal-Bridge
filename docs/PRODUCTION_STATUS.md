@@ -6,6 +6,7 @@
 - Production-oriented CMake presets, warning policy, install rules, ZIP packaging, Windows/Linux CI, deterministic tests, and source-preservation checks.
 - Sync authorization guard requiring current revision vectors, no unresolved conflicts, explicit approval, and a verified backup.
 - Windows read-only enumeration of the observed Akai MPC Sample identity (`VID 09E8`, `PID 205C`), grouping composite interfaces by container ID and recording interface number/service/name.
+- A `ubridge devices` diagnostic command exposes that inventory while explicitly confirming that no interfaces were opened.
 
 ## Experimental or scaffolding only
 

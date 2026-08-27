@@ -31,7 +31,8 @@ The `ubridge` command accepts a complete project folder and a target of **Cubase
 | Profile validation, compatibility report, workflow/archive/report serialization, and local service safe mode | Implemented and fixture-tested |
 | Direct Cubase/Reason project-file generation | Intentionally unavailable |
 | Proprietary MPC project parsing | Intentionally unavailable |
-| Live USB device discovery, audio capture, or MIDI routing | Architectural target; not yet implemented |
+| Read-only Windows USB identity discovery | Experimental inventory for observed MPC Sample `VID 09E8` / `PID 205C`; no interface is opened |
+| Live audio capture, MIDI routing, device control, or protocol integration | Architectural interfaces/scaffolding only; not implemented or qualified |
 | Hardware write-back or live two-way parameter synchronization | Intentionally unavailable |
 
 The prototype uses a transparent exchange-package fallback because VST3 is a plug-in interface for real-time audio components rather than a universal permission to create proprietary DAW project files. VST3 also exposes host-dependent optional interfaces, so each host integration must be verified before it is enabled.[1] Reason supports VST3 plug-ins in its standalone music-making software, making a shared VST3 client a practical future evaluation path, but that does not by itself establish project-writing or full session-control capability.[2]
@@ -64,12 +65,20 @@ Set-ExecutionPolicy -Scope Process Bypass
 
 For Reason, change `-Daw cubase` to `-Daw reason`. The `-TargetOs` argument accepts `windows`, `macos`, `linux`, `android`, `chromeos`, `ipados`, or `ios`. Select **Windows** for the qualified reference workflow. The other identifiers create a hard-coded capability record for that target but do not claim a native app, hardware route, or DAW integration is ready on that platform. The output folder must be different from, and outside, the project folder. Before working with an irreplaceable project, keep an independent backup and run the tool on a copy first. The prototype creates a second copy inside the chosen output folder unless `-NoBackup` is supplied.
 
-You can also build manually:
+You can also build and test with the checked-in CMake presets. Install CMake, Ninja, and either Visual Studio C++ Build Tools, LLVM/Clang, or a current MinGW-w64 GCC toolchain, then run:
 
 ```powershell
-cmake -S . -B build-windows -G "Visual Studio 17 2022" -A x64
-cmake --build build-windows --config Release
-.\build-windows\Release\ubridge.exe preflight `
+cmake --preset dev
+cmake --build --preset dev
+ctest --preset dev
+
+cmake --preset release
+cmake --build --preset release
+ctest --preset release
+cmake --build --preset release --target package
+
+.\build\release\bin\ubridge.exe devices
+.\build\release\bin\ubridge.exe preflight `
   --project "D:\Music\MPC Projects\My Beat" `
   --daw cubase `
   --target-os windows `
@@ -79,9 +88,10 @@ cmake --build build-windows --config Release
 On macOS or Linux, the portable command-line core can be built using CMake and a C++20 compiler. That establishes developer portability only; it does **not** certify hardware, DAW, audio, MIDI, plug-in, or packaging support on those platforms.
 
 ```bash
-cmake -S . -B build -G Ninja
-cmake --build build
-./build/ubridge preflight \
+cmake --preset dev
+cmake --build --preset dev
+ctest --preset dev
+./build/dev/bin/ubridge preflight \
   --project ./fixtures/mpc_sample_demo \
   --daw cubase \
   --output ./examples/output-cubase
@@ -127,11 +137,11 @@ The current fingerprints use FNV-1a 64-bit values to detect ordinary fixture and
 The fixture directory contains simple sanitized placeholder files and must never be confused with a valid proprietary MPC project. It verifies inventory, copy behavior, JSON validity, Cubase/Reason output generation, backup creation, invalid-DAW rejection, output-in-source rejection, and byte-for-byte source preservation.
 
 ```bash
-cmake -S . -B build -G Ninja
-cmake --build build
-ctest --test-dir build --output-on-failure
-./build/ubridge_test_lab
-python3 tests/validate_outputs.py
+cmake --preset dev
+cmake --build --preset dev
+ctest --preset dev
+./build/dev/bin/ubridge_test_lab
+UBRIDGE_BINARY=./build/dev/bin/ubridge python3 tests/validate_outputs.py
 ```
 
 A passing test suite confirms prototype behavior only. It does not prove compatibility with a physical MPC Sample, a particular MPC firmware version, Cubase or Reason edition, audio interface, USB hub, operating-system driver, or DAW plug-in host configuration.

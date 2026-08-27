@@ -80,6 +80,8 @@ endif()
 
 if(BUILD_TESTING AND UBRIDGE_BUILD_TESTS)
 add_test(NAME virtual_hardware_laboratory COMMAND ubridge_test_lab)
+add_test(NAME read_only_device_inventory COMMAND ubridge devices)
+set_tests_properties(read_only_device_inventory PROPERTIES PASS_REGULAR_EXPRESSION "No interfaces were opened")
 
 add_test(
     NAME bridge_demo_preflight
