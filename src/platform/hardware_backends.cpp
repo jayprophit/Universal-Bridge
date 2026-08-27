@@ -1,9 +1,9 @@
 #include "ubridge/platform/hardware_backends.hpp"
 
 #ifdef _WIN32
+#include <windows.h>
 #include <cfgmgr32.h>
 #include <devpkey.h>
-#include <windows.h>
 #endif
 
 #include <algorithm>
