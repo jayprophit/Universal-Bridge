@@ -26,6 +26,8 @@ jobs:
           $output = cmake --build --preset dev 2>&1 | Out-String
           $output
           if ($LASTEXITCODE -ne 0) {
+            $annotation = $output.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Output "::error title=Windows compiler output::$annotation"
             "## Windows compiler output" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY
             '```text' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
             $output | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
