@@ -16,8 +16,22 @@ jobs:
       - uses: actions/checkout@v4
       - name: Configure
         run: cmake --preset dev
-      - name: Build
+      - name: Build (Unix)
+        if: runner.os != 'Windows'
         run: cmake --build --preset dev
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $output = cmake --build --preset dev 2>&1 | Out-String
+          $output
+          if ($LASTEXITCODE -ne 0) {
+            "## Windows compiler output" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY
+            '```text' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            $output | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            '```' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            exit 1
+          }
       - name: Test
         run: ctest --preset dev
       - name: Configure release
