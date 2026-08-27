@@ -66,14 +66,14 @@ public:
             device.product_id = mpc_sample_product_id;
             device.container_id = container;
             device.display_name = "Akai MPC Sample (observed USB identity)";
-            UsbInterface interface;
-            interface.instance_id = utf8(id);
-            interface.container_id = container;
-            interface.friendly_name = utf8(property(node, DEVPKEY_Device_FriendlyName));
-            interface.service = utf8(property(node, DEVPKEY_Device_Service));
+            UsbInterface usb_interface;
+            usb_interface.instance_id = utf8(id);
+            usb_interface.container_id = container;
+            usb_interface.friendly_name = utf8(property(node, DEVPKEY_Device_FriendlyName));
+            usb_interface.service = utf8(property(node, DEVPKEY_Device_Service));
             const auto marker = upper.find(L"&MI_");
-            if (marker != std::wstring::npos && marker + 6 <= upper.size()) interface.interface_number = utf8(upper.substr(marker + 4, 2));
-            device.interfaces.push_back(std::move(interface));
+            if (marker != std::wstring::npos && marker + 6 <= upper.size()) usb_interface.interface_number = utf8(upper.substr(marker + 4, 2));
+            device.interfaces.push_back(std::move(usb_interface));
         }
         std::vector<DiscoveredDevice> result;
         for (auto& [_, device] : grouped) {
