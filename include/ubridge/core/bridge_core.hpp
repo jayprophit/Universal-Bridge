@@ -1,5 +1,7 @@
 #pragma once
 
+#include "ubridge/core/protocol_capabilities.hpp"
+
 #include <cstdint>
 #include <map>
 #include <optional>
@@ -125,6 +127,14 @@ struct ConnectionCapability {
     bool usb_audio = false;
     bool analogue_audio = false;
     bool network = false;
+    std::vector<ProtocolEvidence> protocol_evidence;
+};
+
+struct CapabilityDecision {
+    std::string capability;
+    bool enabled = false;
+    EvidenceLevel evidence = EvidenceLevel::unavailable;
+    std::string rationale;
 };
 
 struct IntegrationPlan {
@@ -137,6 +147,8 @@ struct IntegrationPlan {
     bool audio_capture = false;
     bool bidirectional_sync = false;
     bool mobile_companion = false;
+    bool mobile_bridge = false;
+    std::vector<CapabilityDecision> decisions;
     std::vector<std::string> limitations;
 };
 
@@ -179,6 +191,15 @@ struct Transaction {
     const PlatformCapability& platform,
     const DawCapability& daw,
     const ConnectionCapability& connection);
+
+[[nodiscard]] EvidenceLevel connection_evidence_level(
+    const ConnectionCapability& connection,
+    ProtocolKind protocol,
+    ProtocolDirection direction) noexcept;
+
+[[nodiscard]] std::optional<CapabilityDecision> find_capability_decision(
+    const IntegrationPlan& plan,
+    std::string_view capability);
 
 [[nodiscard]] std::vector<Conflict> detect_conflicts(
     const std::vector<Change>& hardware_changes,

@@ -775,7 +775,14 @@ void list_devices() {
         for (const auto& usb_interface : device.interfaces) {
             std::cout << "  MI_" << (usb_interface.interface_number.empty() ? "??" : usb_interface.interface_number)
                       << " service=" << (usb_interface.service.empty() ? "unknown" : usb_interface.service)
-                      << " name=" << (usb_interface.friendly_name.empty() ? "unknown" : usb_interface.friendly_name) << "\n";
+                       << " name=" << (usb_interface.friendly_name.empty() ? "unknown" : usb_interface.friendly_name) << "\n";
+        }
+        std::cout << "Protocol evidence (observation only):\n";
+        for (const auto& evidence : platform::protocol_evidence_for(device)) {
+            std::cout << "  protocol=" << core::to_string(evidence.protocol)
+                      << " level=" << core::to_string(evidence.level)
+                      << " access=unverified"
+                      << " source=" << evidence.source << "\n";
         }
     }
     std::cout << "\nNo interfaces were opened. Discovery does not claim protocol, MIDI, audio, storage, or CDC-NCM support.\n";

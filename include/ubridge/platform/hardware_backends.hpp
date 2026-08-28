@@ -56,6 +56,7 @@ public:
 
 [[nodiscard]] std::unique_ptr<IDeviceDiscovery> make_system_device_discovery();
 [[nodiscard]] std::string to_string(BackendMaturity maturity);
+[[nodiscard]] std::vector<core::ProtocolEvidence> protocol_evidence_for(const DiscoveredDevice& device);
 
 inline constexpr std::uint16_t mpc_sample_vendor_id = 0x09E8;
 inline constexpr std::uint16_t mpc_sample_product_id = 0x205C;

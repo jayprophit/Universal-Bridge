@@ -19,6 +19,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 
 add_library(ubridge_core STATIC
     src/core/bridge_core.cpp
+    src/core/protocol_capabilities.cpp
     src/core/session_tools.cpp
     src/core/performance_tools.cpp
     src/core/sync_guard.cpp

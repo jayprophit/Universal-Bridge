@@ -112,6 +112,7 @@ CompatibilityReport build_compatibility_report(
     add("audio_capture", integration.audio_capture, "Live audio capture is available.", "Audio capture remains gated.", 10);
     add("bidirectional_sync", integration.bidirectional_sync, "Bidirectional sync is available.", "Bidirectional sync remains gated.", 10);
     add("mobile_companion", integration.mobile_companion, "Companion session pathway is available.", "No companion pathway is declared.", 5);
+    add("mobile_bridge", integration.mobile_bridge, "The mobile/tablet runtime is qualified as a direct bridge host.", "Direct mobile/tablet host operation remains gated.", 0);
 
     for (const auto& limitation : integration.limitations) {
         report.diagnostics.push_back({core::DiagnosticSeverity::info, "capability_limitation", limitation, "Review the capability matrix and use the documented safe fallback."});
@@ -132,8 +133,20 @@ std::string serialize_workflow_json(const modules::FinishWorkflow& workflow) {
            << "    \"hardware_control\": " << boolean(workflow.integration.hardware_control) << ",\n"
            << "    \"audio_capture\": " << boolean(workflow.integration.audio_capture) << ",\n"
            << "    \"bidirectional_sync\": " << boolean(workflow.integration.bidirectional_sync) << ",\n"
-           << "    \"mobile_companion\": " << boolean(workflow.integration.mobile_companion) << "\n"
-           << "  },\n  \"steps\": [";
+           << "    \"mobile_companion\": " << boolean(workflow.integration.mobile_companion) << ",\n"
+           << "    \"mobile_bridge\": " << boolean(workflow.integration.mobile_bridge) << "\n"
+           << "  },\n  \"capability_decisions\": [";
+    for (std::size_t index = 0; index < workflow.integration.decisions.size(); ++index) {
+        const auto& decision = workflow.integration.decisions[index];
+        output << "\n    {\"capability\": \"" << escape_json(decision.capability)
+               << "\", \"enabled\": " << boolean(decision.enabled)
+               << ", \"evidence\": \"" << core::to_string(decision.evidence)
+               << "\", \"rationale\": \"" << escape_json(decision.rationale) << "\"}";
+        if (index + 1 < workflow.integration.decisions.size()) {
+            output << ",";
+        }
+    }
+    output << "\n  ],\n  \"steps\": [";
     for (std::size_t index = 0; index < workflow.steps.size(); ++index) {
         const auto& step = workflow.steps[index];
         output << "\n    {\"id\": \"" << escape_json(step.id) << "\", \"title\": \"" << escape_json(step.title)

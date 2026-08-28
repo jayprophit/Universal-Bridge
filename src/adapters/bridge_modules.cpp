@@ -178,13 +178,18 @@ AudioCapturePlan plan_audio_capture(
     plan.latency_policy = "calibrate_before_capture";
     plan.required_checks = {"user_approval", "source_backup", "timing_calibration", "silence_detection", "tail_policy", "clip_detection"};
 
-    const bool transport_available = connection.usb_audio || connection.analogue_audio;
+    const auto usb_audio_evidence = core::connection_evidence_level(
+        connection, core::ProtocolKind::usb_audio, core::ProtocolDirection::input);
+    const auto analogue_audio_evidence = core::connection_evidence_level(
+        connection, core::ProtocolKind::analogue_audio, core::ProtocolDirection::input);
+    const bool transport_available = core::evidence_at_least(usb_audio_evidence, core::EvidenceLevel::qualified) ||
+                                     core::evidence_at_least(analogue_audio_evidence, core::EvidenceLevel::qualified);
     plan.allowed = platform.capability.runtime_qualified && platform.capability.audio_backend &&
                    device.capability.audio_input && transport_available;
     plan.sequential = plan.allowed && device.capability.audio_channels <= 2 && device.control_qualified;
 
     if (!plan.allowed) {
-        plan.limitations.push_back("Audio capture is disabled until the exact device, platform backend, and connection route are qualified.");
+        plan.limitations.push_back("Audio capture is disabled until the exact device, platform backend, and input route carry qualified evidence.");
     }
     if (device.capability.audio_channels == 0) {
         plan.limitations.push_back("The profile declares no direct device audio route; use a qualified analogue capture plan if available.");
@@ -204,13 +209,16 @@ MidiRoutePlan plan_midi_route(
     MidiRoutePlan plan;
     plan.virtual_ports_required = true;
     plan.required_checks = {"endpoint_identity", "feedback_loop_detection", "channel_collision_detection", "user_approval"};
+    const auto midi_evidence = core::connection_evidence_level(
+        connection, core::ProtocolKind::usb_midi, core::ProtocolDirection::duplex);
     plan.allowed = platform.capability.runtime_qualified && platform.capability.usb_device_access &&
-                   platform.capability.virtual_midi && connection.usb_midi &&
+                   platform.capability.virtual_midi &&
+                   core::evidence_at_least(midi_evidence, core::EvidenceLevel::qualified) &&
                    device.capability.midi_input && device.capability.midi_output;
     plan.supports_thru_merge_split = plan.allowed;
 
     if (!plan.allowed) {
-        plan.limitations.push_back("Live MIDI routing is disabled until the platform device service and virtual MIDI backend are qualified.");
+        plan.limitations.push_back("Live MIDI routing is disabled until the platform backend and duplex endpoint both carry qualified evidence.");
     }
     return plan;
 }

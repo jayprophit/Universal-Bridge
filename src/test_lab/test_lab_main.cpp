@@ -73,6 +73,7 @@ void mobile_and_audio_safety_test() {
     const auto integration = ubridge::core::negotiate(device.capability, android.capability, daw.capability, usb);
     expect(!integration.hardware_control, "unqualified Android route must not activate hardware control");
     expect(integration.mobile_companion, "Android profile must retain the companion pathway");
+    expect(!integration.mobile_bridge, "a declared companion route must not be mistaken for a qualified mobile bridge host");
 
     const auto capture = ubridge::modules::plan_audio_capture(device, android, usb);
     expect(!capture.allowed, "audio capture must stay disabled before mobile backend qualification");
@@ -80,6 +81,60 @@ void mobile_and_audio_safety_test() {
 
     const auto midi = ubridge::modules::plan_midi_route(device, android, usb);
     expect(!midi.allowed, "live MIDI must stay disabled before virtual MIDI backend qualification");
+}
+
+void protocol_evidence_and_host_negotiation_test() {
+    using namespace ubridge;
+    auto device = *modules::find_device_profile("akai.mpc-sample");
+    auto platform_profile = *modules::find_platform_profile("android");
+    auto daw = *modules::find_daw_profile("mobile-generic");
+
+    platform_profile.capability.runtime_qualified = true;
+    platform_profile.capability.local_file_access = true;
+    platform_profile.capability.usb_device_access = true;
+    platform_profile.capability.audio_backend = true;
+    platform_profile.capability.virtual_midi = true;
+    platform_profile.capability.direct_mobile_host_route = true;
+    device.capability.parameter_read = true;
+    device.capability.parameter_write = true;
+    daw.capability.parameter_feedback = true;
+
+    core::ConnectionCapability connection;
+    connection.transport_id = "usb-c-fixture";
+    connection.protocol_evidence = {
+        {core::ProtocolKind::usb_midi, core::EvidenceLevel::observed, true, true, 0, 0, "midi-fixture", "fixture endpoint observation"},
+        {core::ProtocolKind::usb_audio, core::EvidenceLevel::observed, true, false, 2, 0, "audio-fixture", "fixture endpoint observation"}
+    };
+
+    const auto observed = core::negotiate(device.capability, platform_profile.capability, daw.capability, connection);
+    expect(!observed.hardware_control, "observed MIDI endpoint must not activate hardware control before qualification");
+    expect(!observed.audio_capture, "observed audio endpoint must not activate capture before qualification");
+    expect(!observed.mobile_bridge, "unqualified endpoint observations must not activate direct mobile hosting");
+    const auto observed_control = core::find_capability_decision(observed, "hardware_control");
+    expect(observed_control.has_value(), "every negotiated feature must expose an auditable decision");
+    expect(observed_control->evidence == core::EvidenceLevel::observed, "the decision must retain observed evidence without promoting it");
+
+    connection.protocol_evidence.at(0).level = core::EvidenceLevel::qualified;
+    connection.protocol_evidence.at(1).level = core::EvidenceLevel::qualified;
+    const auto qualified = core::negotiate(device.capability, platform_profile.capability, daw.capability, connection);
+    expect(qualified.hardware_control, "qualified duplex MIDI fixture may activate the synthetic control route");
+    expect(qualified.audio_capture, "qualified input fixture may activate the synthetic audio route");
+    expect(qualified.bidirectional_sync, "qualified device and host feedback fixture may activate synthetic sync");
+    expect(qualified.mobile_bridge, "qualified native mobile fixture must be represented as a direct bridge host");
+
+    platform::DiscoveredDevice discovered;
+    discovered.interfaces = {
+        {"usb-audio-fixture", "container-fixture", "00", "usbaudio2", "MPC Sample Audio"},
+        {"usb-unknown-fixture", "container-fixture", "03", "", ""},
+        {"usb-parent-fixture", "container-fixture", "", "usbccgp", ""}
+    };
+    const auto os_evidence = platform::protocol_evidence_for(discovered);
+    expect(core::strongest_protocol_evidence(os_evidence, core::ProtocolKind::usb_audio, core::ProtocolDirection::discovery) == core::EvidenceLevel::observed,
+           "Windows class-service evidence must remain an observation");
+    expect(core::strongest_protocol_evidence(os_evidence, core::ProtocolKind::usb_audio, core::ProtocolDirection::input) == core::EvidenceLevel::unavailable,
+           "class-service discovery must not invent stream direction or input access");
+    expect(core::strongest_protocol_evidence(os_evidence, core::ProtocolKind::usb_midi, core::ProtocolDirection::discovery) == core::EvidenceLevel::unavailable,
+           "an Audio class service must not be relabeled as MIDI without endpoint evidence");
 }
 
 void conflict_and_transaction_test() {
@@ -240,6 +295,7 @@ void reporting_and_profile_test() {
     expect(report.score_percent == 50, "reference exchange route should score only its actually available capabilities");
     const auto workflow_json = reporting::serialize_workflow_json(workflow);
     expect(workflow_json.find("\"workflow_id\": \"finish-in-cubase\"") != std::string::npos, "workflow serializer must preserve workflow identity");
+    expect(workflow_json.find("\"evidence\": \"declared\"") != std::string::npos, "workflow serializer must expose capability evidence levels");
     const auto archive_json = reporting::serialize_archive_plan_json(session::plan_archive(complete_session_fixture(false), "fixture-archive"));
     expect(archive_json.find("\"ready_to_package\": true") != std::string::npos, "archive serializer must preserve readiness state");
     const auto report_json = reporting::serialize_compatibility_report_json(report);
@@ -265,6 +321,7 @@ int main() {
     profile_registry_test();
     negotiation_and_workflow_test();
     mobile_and_audio_safety_test();
+    protocol_evidence_and_host_negotiation_test();
     conflict_and_transaction_test();
     sync_and_backend_contract_test();
     local_service_test();

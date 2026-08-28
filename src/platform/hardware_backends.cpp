@@ -8,6 +8,7 @@
 #endif
 
 #include <algorithm>
+#include <cctype>
 #include <cstdio>
 #include <cwchar>
 #include <cwctype>
@@ -78,7 +79,7 @@ public:
         }
         std::vector<DiscoveredDevice> result;
         for (auto& [_, device] : grouped) {
-            device.diagnostics.push_back({core::DiagnosticSeverity::warning, "mpc_sample_identity_only", "USB identity and shared-container interfaces were observed; no proprietary protocol or write capability is enabled.", "Qualify each interface, including any MI_03 CDC-NCM function, before opening or controlling it."});
+            device.diagnostics.push_back({core::DiagnosticSeverity::warning, "mpc_sample_identity_only", "USB identity and shared-container interfaces were observed; no proprietary protocol or write capability is enabled.", "Qualify every interface independently. The purpose of MI_03 remains unknown and must not be inferred from container membership."});
             result.push_back(std::move(device));
         }
         return result;
@@ -108,5 +109,31 @@ std::string to_string(BackendMaturity maturity) {
         case BackendMaturity::qualified: return "qualified";
     }
     return "unavailable";
+}
+
+std::vector<core::ProtocolEvidence> protocol_evidence_for(const DiscoveredDevice& device) {
+    std::vector<core::ProtocolEvidence> evidence;
+    for (const auto& usb_interface : device.interfaces) {
+        std::string service = usb_interface.service;
+        std::transform(service.begin(), service.end(), service.begin(), [](unsigned char character) {
+            return static_cast<char>(std::tolower(character));
+        });
+
+        core::ProtocolEvidence item;
+        item.level = core::EvidenceLevel::observed;
+        item.endpoint_id = usb_interface.instance_id;
+        if (service == "usbccgp") {
+            item.protocol = core::ProtocolKind::usb_composite;
+            item.source = "Windows reported a USB composite parent; no child protocol was inferred.";
+        } else if (service == "usbaudio" || service == "usbaudio2") {
+            item.protocol = core::ProtocolKind::usb_audio;
+            item.source = "Windows reported USB Audio class service '" + service + "'; stream direction and channels were not probed.";
+        } else {
+            item.protocol = core::ProtocolKind::unknown;
+            item.source = "Windows exposed the interface, but its protocol and function remain unknown.";
+        }
+        evidence.push_back(std::move(item));
+    }
+    return evidence;
 }
 } // namespace ubridge::platform
