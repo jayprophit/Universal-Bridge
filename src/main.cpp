@@ -1,7 +1,6 @@
 #include "ubridge/platform/hardware_backends.hpp"
 
 #include <algorithm>
-#include <array>
 #include <chrono>
 #include <cctype>
 #include <cstdint>
@@ -153,7 +152,10 @@ struct Session {
         return "unreadable";
     }
 
-    std::array<char, 65536> buffer{};
+    // Keep the I/O buffer off the limited Windows thread stack. The CLI can
+    // hash arbitrarily large project assets, so a reusable heap allocation is
+    // preferable to a 64 KiB automatic object for this production path.
+    std::vector<char> buffer(64U * 1024U);
     while (source.good()) {
         source.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
         const auto read = source.gcount();

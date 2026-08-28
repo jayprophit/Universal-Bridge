@@ -1,4 +1,5 @@
 cmake_minimum_required(VERSION 3.24)
+cmake_policy(SET CMP0091 NEW)
 project(UniversalBridge VERSION 0.5.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
@@ -6,6 +7,11 @@ include(CTest)
 
 option(UBRIDGE_BUILD_TESTS "Build deterministic offline tests" ON)
 option(UBRIDGE_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
+option(UBRIDGE_STATIC_MSVC_RUNTIME "Statically link the MSVC runtime for portable ZIP packages" ON)
+
+if(MSVC AND UBRIDGE_STATIC_MSVC_RUNTIME)
+    set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
+endif()
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)

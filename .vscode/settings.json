@@ -1,0 +1,13 @@
+{
+  "cmake.useCMakePresets": "always",
+  "cmake.useVsDeveloperEnvironment": "auto",
+  "cmake.configureOnOpen": false,
+  "cmake.configureOnEdit": false,
+  "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+  "files.eol": "\n",
+  "files.insertFinalNewline": true,
+  "files.trimTrailingWhitespace": true,
+  "[markdown]": {
+    "files.trimTrailingWhitespace": false
+  }
+}

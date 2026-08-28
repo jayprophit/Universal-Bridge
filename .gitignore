@@ -10,7 +10,9 @@ Testing/
 /tests/test-output/
 
 # Local editor and operating-system files
-.vscode/
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
 .idea/
 .DS_Store
 Thumbs.db

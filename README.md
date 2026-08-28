@@ -52,7 +52,7 @@ universal-bridge/
 
 ## Windows build and run
 
-The primary reference operating system is Windows. Install a current **Visual Studio 2022 Build Tools** or Visual Studio Community installation with the **Desktop development with C++** workload and CMake support. This repository contains a PowerShell launcher that configures, builds, and executes the reference preflight.
+The primary reference operating system is Windows. Install a supported Visual Studio Build Tools or Visual Studio Community installation with the **Desktop development with C++** workload and CMake support. The checked-in MSVC presets target Visual Studio 2026. The PowerShell launcher automatically selects Visual Studio 2026 when present and falls back to Visual Studio 2022, then configures, builds, and executes the reference preflight.
 
 ```powershell
 Set-ExecutionPolicy -Scope Process Bypass
@@ -143,6 +143,21 @@ ctest --preset dev
 ./build/dev/bin/ubridge_test_lab
 UBRIDGE_BINARY=./build/dev/bin/ubridge python3 tests/validate_outputs.py
 ```
+
+Visual Studio Community/Build Tools 2026 users can independently validate the Microsoft compiler and Windows SDK path with the multi-configuration presets:
+
+```powershell
+cmake --preset msvc-dev
+cmake --build --preset msvc-dev
+ctest --preset msvc-dev
+
+cmake --preset msvc-release
+cmake --build --preset msvc-release
+ctest --preset msvc-release
+cmake --build --preset msvc-release --target package
+```
+
+VS Code uses `CMakePresets.json` through the recommended Microsoft CMake Tools and C/C++ extensions. Select `msvc-dev` when validating the Microsoft toolchain, or `dev` for the portable Ninja developer path. The repository does not require SQL Server or SQL Server Management Studio.
 
 A passing test suite confirms prototype behavior only. It does not prove compatibility with a physical MPC Sample, a particular MPC firmware version, Cubase or Reason edition, audio interface, USB hub, operating-system driver, or DAW plug-in host configuration.
 

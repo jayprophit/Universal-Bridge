@@ -4,6 +4,7 @@
 
 - C++20 canonical session, capability negotiation, transaction journal, asset/archive planning, MIDI-route validation, timing/stem analysis, compatibility reporting, and read-only fixture exchange.
 - Production-oriented CMake presets, warning policy, install rules, ZIP packaging, Windows/Linux CI, deterministic tests, and source-preservation checks.
+- Dedicated Visual Studio 2026/MSVC Debug and Release presets, checked-in VS Code configuration, compile-command export for analysis tooling, and a portable static MSVC runtime policy for ZIP builds.
 - Sync authorization guard requiring current revision vectors, no unresolved conflicts, explicit approval, and a verified backup.
 - Windows read-only enumeration of the observed Akai MPC Sample identity (`VID 09E8`, `PID 205C`), grouping composite interfaces by container ID and recording interface number/service/name.
 - A `ubridge devices` diagnostic command exposes that inventory while explicitly confirming that no interfaces were opened.

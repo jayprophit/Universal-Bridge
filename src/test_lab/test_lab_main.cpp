@@ -115,8 +115,10 @@ void sync_and_backend_contract_test() {
     expect(core::authorize_sync(request).may_execute, "unchanged, approved, backed-up sync plan may execute");
     request.actual.hardware = 2;
     expect(!core::authorize_sync(request).may_execute, "stale hardware revision must invalidate a sync plan");
-    expect(platform::mpc_sample_vendor_id == 0x09E8, "observed MPC Sample vendor ID must remain explicit");
-    expect(platform::mpc_sample_product_id == 0x205C, "observed MPC Sample product ID must remain explicit");
+    static_assert(platform::mpc_sample_vendor_id == 0x09E8,
+                  "observed MPC Sample vendor ID must remain explicit");
+    static_assert(platform::mpc_sample_product_id == 0x205C,
+                  "observed MPC Sample product ID must remain explicit");
     expect(platform::to_string(platform::BackendMaturity::experimental) == "experimental", "backend maturity must be reportable");
     expect(platform::make_system_device_discovery() != nullptr, "platform discovery factory must always return a safe implementation");
 }
