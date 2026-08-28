@@ -1,5 +1,6 @@
+#include "ubridge/platform/hardware_backends.hpp"
+
 #include <algorithm>
-#include <array>
 #include <chrono>
 #include <cctype>
 #include <cstdint>
@@ -151,7 +152,10 @@ struct Session {
         return "unreadable";
     }
 
-    std::array<char, 65536> buffer{};
+    // Keep the I/O buffer off the limited Windows thread stack. The CLI can
+    // hash arbitrarily large project assets, so a reusable heap allocation is
+    // preferable to a 64 KiB automatic object for this production path.
+    std::vector<char> buffer(64U * 1024U);
     while (source.good()) {
         source.read(buffer.data(), static_cast<std::streamsize>(buffer.size()));
         const auto read = source.gcount();
@@ -243,6 +247,7 @@ void copy_safely(const fs::path& source, const fs::path& destination) {
 
 Usage:
   ubridge preflight --project <folder> --daw <cubase|reason> --output <folder> [options]
+  ubridge devices
 
 Options:
   --target-os <platform> Target capability profile: windows, macos, linux, android, chromeos, ipados, ios. Default: windows.
@@ -254,6 +259,7 @@ Options:
 Safety model:
   The source project directory is read-only from the bridge's perspective. All output,
   backups, manifests, and exchange files are written to the selected output folder.
+  Device inventory is read-only: matching interfaces are never opened or controlled.
 )";
 }
 
@@ -755,12 +761,43 @@ void preflight(const Options& options) {
               << "Warnings: " << std::count_if(session.findings.begin(), session.findings.end(), [](const Finding& finding) { return finding.severity == "warning"; }) << "\n";
 }
 
+void list_devices() {
+    auto discovery = platform::make_system_device_discovery();
+    const auto devices = discovery->enumerate();
+    std::cout << "Universal Bridge read-only device inventory\n"
+              << "Observed identity filter: VID 09E8 / PID 205C\n"
+              << "Backend maturity: experimental\n"
+              << "Matching device containers: " << devices.size() << "\n";
+    for (const auto& device : devices) {
+        std::cout << "\nDevice: " << device.display_name << "\n"
+                  << "Container: " << (device.container_id.empty() ? "unavailable" : device.container_id) << "\n"
+                  << "Interfaces: " << device.interfaces.size() << "\n";
+        for (const auto& usb_interface : device.interfaces) {
+            std::cout << "  MI_" << (usb_interface.interface_number.empty() ? "??" : usb_interface.interface_number)
+                      << " service=" << (usb_interface.service.empty() ? "unknown" : usb_interface.service)
+                       << " name=" << (usb_interface.friendly_name.empty() ? "unknown" : usb_interface.friendly_name) << "\n";
+        }
+        std::cout << "Protocol evidence (observation only):\n";
+        for (const auto& evidence : platform::protocol_evidence_for(device)) {
+            std::cout << "  protocol=" << core::to_string(evidence.protocol)
+                      << " level=" << core::to_string(evidence.level)
+                      << " access=unverified"
+                      << " source=" << evidence.source << "\n";
+        }
+    }
+    std::cout << "\nNo interfaces were opened. Discovery does not claim protocol, MIDI, audio, storage, or CDC-NCM support.\n";
+}
+
 } // namespace ubridge
 
 int main(int argc, char* argv[]) {
     try {
         if (argc == 2 && std::string_view(argv[1]) == "--help") {
             std::cout << ubridge::usage();
+            return 0;
+        }
+        if (argc == 2 && std::string_view(argv[1]) == "devices") {
+            ubridge::list_devices();
             return 0;
         }
         const auto options = ubridge::parse_options(argc, argv);

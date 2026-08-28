@@ -1,15 +1,19 @@
-Universal Bridge
-Copyright © 2026 [copyright owner]. All rights reserved.
+UNIVERSAL BRIDGE — PROPRIETARY SOFTWARE LICENSE NOTICE
 
-This software and associated source code are proprietary and confidential.
+Copyright © 2026. All rights reserved.
 
-No part of the software or source code may be copied, modified,
-redistributed, sublicensed, reverse engineered, published, or used to
-create derivative works except as expressly permitted by a written
-licence agreement from the copyright owner.
+Universal Bridge, including its source code, executable code, architecture, documentation, proprietary device integrations, DAW integrations, synchronization technology, software components, and associated materials, is proprietary software except where a component is explicitly identified as being distributed under a separate licence.
 
-Third-party components included with or used by this software remain
-subject to their respective licences.
+No permission is granted to copy, reproduce, publish, distribute, sublicense, sell, modify, reverse engineer, decompile, create derivative works from, or otherwise use the proprietary source code or software except where expressly permitted by a separate written licence agreement issued by the copyright owner.
 
-The software is provided subject to the applicable Universal Bridge
-End User Licence Agreement and/or commercial licence agreement.
+Publicly available SDK interfaces, schemas, examples, specifications, profile formats, headers, or other components may be distributed under separate licences. The licence applying to such a component will be identified with that component.
+
+Third-party software and libraries incorporated into, linked with, or distributed alongside Universal Bridge remain subject to their respective licences and copyright notices.
+
+Earlier versions of this repository that were released under CC0 1.0 remain subject to the rights already granted under that licence. This notice applies to proprietary development and releases made after the project's licensing transition.
+
+Commercial use of Universal Bridge is permitted only in accordance with the applicable End User Licence Agreement, commercial licence agreement, SDK licence, or other written agreement supplied by the copyright owner.
+
+THE SOFTWARE IS PROVIDED SUBJECT TO THE APPLICABLE COMMERCIAL LICENCE TERMS. NO WARRANTY IS CREATED BY THIS NOTICE.
+
+For licensing enquiries, refer to the official Universal Bridge distribution or accompanying commercial licence documentation.

@@ -1,0 +1,42 @@
+name: CI
+on:
+  push:
+    branches: [main, develop/v0.5-production-foundation]
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  build-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-2022, ubuntu-24.04]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Configure
+        run: cmake --preset dev
+      - name: Build (Unix)
+        if: runner.os != 'Windows'
+        run: cmake --build --preset dev
+      - name: Build (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $output = cmake --build --preset dev 2>&1 | Out-String
+          $output
+          if ($LASTEXITCODE -ne 0) {
+            $annotation = $output.Replace('%', '%25').Replace("`r", '%0D').Replace("`n", '%0A')
+            Write-Output "::error title=Windows compiler output::$annotation"
+            "## Windows compiler output" | Out-File -FilePath $env:GITHUB_STEP_SUMMARY
+            '```text' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            $output | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            '```' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+            exit 1
+          }
+      - name: Test
+        run: ctest --preset dev
+      - name: Configure release
+        run: cmake --preset release
+      - name: Package
+        run: cmake --build --preset release --target package

@@ -1,0 +1,48 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": { "major": 3, "minor": 24, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "dev",
+      "displayName": "Developer build",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/dev",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Debug", "CMAKE_EXPORT_COMPILE_COMMANDS": "ON", "BUILD_TESTING": "ON", "UBRIDGE_WARNINGS_AS_ERRORS": "ON" }
+    },
+    {
+      "name": "release",
+      "displayName": "Release package",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/release",
+      "cacheVariables": { "CMAKE_BUILD_TYPE": "Release", "CMAKE_EXPORT_COMPILE_COMMANDS": "ON", "BUILD_TESTING": "ON" }
+    },
+    {
+      "name": "msvc-dev",
+      "displayName": "Visual Studio 2026 / MSVC Debug",
+      "generator": "Visual Studio 18 2026",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/msvc-dev",
+      "cacheVariables": { "BUILD_TESTING": "ON", "UBRIDGE_WARNINGS_AS_ERRORS": "ON" }
+    },
+    {
+      "name": "msvc-release",
+      "displayName": "Visual Studio 2026 / MSVC Release",
+      "generator": "Visual Studio 18 2026",
+      "architecture": "x64",
+      "binaryDir": "${sourceDir}/build/msvc-release",
+      "cacheVariables": { "BUILD_TESTING": "ON" }
+    }
+  ],
+  "buildPresets": [
+    { "name": "dev", "configurePreset": "dev" },
+    { "name": "release", "configurePreset": "release" },
+    { "name": "msvc-dev", "configurePreset": "msvc-dev", "configuration": "Debug", "jobs": 4 },
+    { "name": "msvc-release", "configurePreset": "msvc-release", "configuration": "Release", "jobs": 4 }
+  ],
+  "testPresets": [
+    { "name": "dev", "configurePreset": "dev", "output": { "outputOnFailure": true } },
+    { "name": "release", "configurePreset": "release", "output": { "outputOnFailure": true } },
+    { "name": "msvc-dev", "configurePreset": "msvc-dev", "configuration": "Debug", "output": { "outputOnFailure": true } },
+    { "name": "msvc-release", "configurePreset": "msvc-release", "configuration": "Release", "output": { "outputOnFailure": true } }
+  ]
+}
