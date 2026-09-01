@@ -1,3 +1,4 @@
+#include "ubridge/bridge_modules.hpp"
 #include "ubridge/platform/hardware_backends.hpp"
 
 #include <algorithm>
@@ -232,7 +233,59 @@ void copy_safely(const fs::path& source, const fs::path& destination) {
 }
 
 [[nodiscard]] bool valid_daw(const std::string& daw) {
-    return daw == "cubase" || daw == "reason";
+    const auto normalized = lower(daw);
+    for (const auto& profile : ubridge::modules::builtin_daw_profiles()) {
+        if (profile.id == normalized) {
+            return true;
+        }
+    }
+    return false;
+}
+
+[[nodiscard]] bool valid_device(const std::string& device) {
+    static const std::set<std::string> supported = {
+        "mpc-sample", "mpc-one", "mpc-live", "audient", "audient-usb", "midi-keyboard",
+        "midi-controller", "generic-midi-controller", "generic-usb-audio"
+    };
+    return supported.contains(lower(device));
+}
+
+[[nodiscard]] std::string daw_display_name(const std::string& daw) {
+    const auto profile = ubridge::modules::find_daw_profile(lower(daw));
+    if (profile.has_value()) {
+        return profile->display_name;
+    }
+    return (lower(daw) == "cubase") ? "Cubase" : "Target DAW";
+}
+
+[[nodiscard]] std::string daw_import_tag(const std::string& daw) {
+    const auto normalized = lower(daw);
+    static const std::map<std::string, std::string> aliases = {
+        {"cubase", "CUBASE"},
+        {"reason", "REASON"},
+        {"ableton-live", "ABLETON_LIVE"},
+        {"fl-studio", "FL_STUDIO"},
+        {"garageband", "GARAGEBAND"},
+        {"logic-pro", "LOGIC_PRO"},
+        {"reaper", "REAPER"},
+        {"studio-one", "STUDIO_ONE"},
+        {"pro-tools", "PRO_TOOLS"},
+        {"mobile-generic", "MOBILE_GENERIC"}
+    };
+    const auto found = aliases.find(normalized);
+    if (found != aliases.end()) {
+        return found->second;
+    }
+    std::string cleaned;
+    cleaned.reserve(normalized.size());
+    for (char character : normalized) {
+        if (std::isalnum(static_cast<unsigned char>(character))) {
+            cleaned.push_back(static_cast<char>(std::toupper(static_cast<unsigned char>(character))));
+        } else {
+            cleaned.push_back('_');
+        }
+    }
+    return cleaned;
 }
 
 [[nodiscard]] bool valid_platform(const std::string& platform) {
@@ -242,24 +295,38 @@ void copy_safely(const fs::path& source, const fs::path& destination) {
     return supported.contains(platform);
 }
 
+[[nodiscard]] std::string supported_daw_list() {
+   return "cubase, reason, ableton-live, garageband, logic-pro, fl-studio, fl-studio-mobile, reaper, studio-one, pro-tools, mobile-generic";
+}
+
+[[nodiscard]] std::string supported_device_list() {
+   return "mpc-sample, mpc-one, mpc-live, audient, audient-usb, midi-keyboard, midi-controller, generic-midi-controller, generic-usb-audio";
+}
+
 [[nodiscard]] std::string usage() {
-    return R"(Universal Hardware Session Bridge — developer prototype
-
+   return R"(Universal Hardware Session Bridge — developer prototype
+ 
 Usage:
-  ubridge preflight --project <folder> --daw <cubase|reason> --output <folder> [options]
+  ubridge preflight --project <folder> --daw <cubase|reason|ableton-live|fl-studio|garageband|logic-pro|reaper|studio-one|pro-tools|mobile-generic> --output <folder> [options]
+  ubridge route --device <mpc-sample|mpc-one|mpc-live|audient|audient-usb|midi-keyboard|midi-controller|generic-midi-controller|generic-usb-audio> --daw <cubase|reason|ableton-live|fl-studio|garageband|logic-pro|reaper|studio-one|pro-tools|mobile-generic>
   ubridge devices
-
+ 
+Example live runtime: MPC Sample -> Windows 11 -> Cubase
+ 
 Options:
   --target-os <platform> Target capability profile: windows, macos, linux, android, chromeos, ipados, ios. Default: windows.
-  --device <mpc-sample>  Reference hardware profile. Default: mpc-sample.
+  --device <mpc-sample|mpc-one|mpc-live|audient|audient-usb|midi-keyboard|midi-controller|generic-midi-controller|generic-usb-audio>  Reference hardware profile. Default: mpc-sample.
+  --daw <supported-daw>  Target DAW for live route planning or project exchange. Default: cubase.
   --no-backup            Do not create a read-only project backup copy.
   --no-copy-assets       Inventory assets but do not copy audio/MIDI into Exchange/.
   --help                 Show this help text.
-
+ 
 Safety model:
   The source project directory is read-only from the bridge's perspective. All output,
   backups, manifests, and exchange files are written to the selected output folder.
   Device inventory is read-only: matching interfaces are never opened or controlled.
+  Live route planning describes the Windows runtime contract and approval gates; it does not
+  claim a connected device or a verified DAW host session in this environment.
 )";
 }
 
@@ -304,13 +371,13 @@ Safety model:
         throw std::runtime_error("--project, --daw, and --output are required.\n\n" + usage());
     }
     if (!valid_daw(options.daw)) {
-        throw std::runtime_error("The initial prototype supports only Cubase or Reason as targets.");
+        throw std::runtime_error("Supported DAW targets are: " + supported_daw_list() + ".");
     }
     if (!valid_platform(options.platform)) {
         throw std::runtime_error("Supported target operating systems are windows, macos, linux, android, chromeos, ipados, and ios.");
     }
-    if (options.device != "mpc-sample") {
-        throw std::runtime_error("The initial reference profile is mpc-sample. Additional profiles are planned but not active.");
+    if (!valid_device(options.device)) {
+        throw std::runtime_error("Supported hardware device profiles are: " + supported_device_list() + ".");
     }
     return options;
 }
@@ -596,6 +663,156 @@ void write_findings_json(std::ostringstream& stream, const std::vector<Finding>&
     return stream.str();
 }
 
+[[nodiscard]] std::string platform_runtime_route_manifest(const std::string& platform, const std::string& device, const std::string& daw) {
+    const auto normalized = lower(platform);
+    std::ostringstream stream;
+    stream << "# " << (normalized == "windows" ? "Windows" : normalized == "macos" ? "macOS" : normalized == "linux" ? "Linux" : normalized == "android" ? "Android" : normalized == "chromeos" ? "ChromeOS" : normalized == "ipados" ? "iPadOS" : normalized == "ios" ? "iOS" : "Cross-platform") << " live-route runtime blueprint\n\n"
+           << "Target device: " << device << "\n"
+           << "Target DAW: " << daw << "\n"
+           << "Host OS: " << (normalized.empty() ? "selected platform" : normalized) << "\n\n";
+
+    if (normalized == "windows") {
+        stream << "## 1. Device acquisition and discovery\n"
+               << "- USB enumeration: SetupAPI + WinUSB or libusb backend with VID/PID and interface filtering.\n"
+               << "- Device identity: exact VID/PID and interface enumeration must be verified before any endpoint is opened.\n"
+               << "- Safety gate: the runtime will refuse any path that does not pass an explicit device identity check and user approval.\n\n"
+               << "## 2. MIDI backend\n"
+               << "- Windows MIDI Services / MMSystem endpoints for device discovery, input, output, and routing.\n"
+               << "- MIDI clock, note, CC, transport, and program-change routing are normalized to the canonical bridge session model.\n"
+               << "- Safety gate: MIDI I/O is disabled until the user approves the session and a valid port assignment exists.\n\n"
+               << "## 3. Audio backend\n"
+               << "- WASAPI for standard audio endpoints and ASIO for low-latency DAW-grade capture when available.\n"
+               << "- Audient driver path is added only after the interface is enumerated and confirmed to be the correct hardware.\n"
+               << "- Safety gate: audio capture is sequential, approved, and stored in a protected output folder rather than the source project folder.\n\n"
+               << "## 4. DAW route\n"
+               << "- First production route: MPC Sample -> Windows 11 -> Cubase.\n"
+               << "- The runtime creates an approved bridge session, converts the project to canonical form, writes the transport/session plan, and only then emits a DAW import or host action.\n"
+               << "- Safety gate: direct DAW project generation is disabled unless the exact DAW/host adapter is qualified.\n\n";
+    } else if (normalized == "macos") {
+        stream << "## 1. Device acquisition and discovery\n"
+               << "- USB enumeration: IOKit + CoreFoundation with vendor/product filtering and safe interface probing.\n"
+               << "- Device identity: exact model, vendor, and endpoint identity must be verified before opening any device path.\n"
+               << "- Safety gate: the runtime requires user approval before any core I/O path is opened.\n\n"
+               << "## 2. MIDI backend\n"
+               << "- CoreMIDI for device discovery, routing, and clock synchronization.\n"
+               << "- MIDI event normalization is performed before any DAW import or write-back.\n"
+               << "- Safety gate: no direct hardware writes until the MIDI path is stable and approved.\n\n"
+               << "## 3. Audio backend\n"
+               << "- CoreAudio and AVFoundation / AudioToolbox for capture and routing.\n"
+               << "- ASIO or driver-specific audio backends are optional and only used when the host route is validated.\n"
+               << "- Safety gate: all capture remains sequential and output-folder scoped.\n\n"
+               << "## 4. DAW route\n"
+               << "- Primary Apple route: GarageBand / Logic Pro / Desktop host environments when the route is qualified.\n"
+               << "- The desktop runtime does not claim live DAW-directed project generation until the host adapter is certified.\n"
+               << "- Safety gate: import and automation remain exchange-based until the route is qualified.\n\n";
+    } else if (normalized == "linux") {
+        stream << "## 1. Device acquisition and discovery\n"
+               << "- USB enumeration: libudev + hidapi/libusb with product and interface filtering.\n"
+               << "- Device identity: vendor/product IDs and sysfs metadata must match before any device path is opened.\n"
+               << "- Safety gate: no device control until identity, permission, and user approval have passed.\n\n"
+               << "## 2. MIDI backend\n"
+               << "- ALSA / PipeWire MIDI for endpoint discovery and routing.\n"
+               << "- MIDI clock and note/event normalization are performed in the canonical bridge session model.\n"
+               << "- Safety gate: no write-back path is enabled without a verified route and user approval.\n\n"
+               << "## 3. Audio backend\n"
+               << "- PipeWire and ALSA are used for capture and routing.\n"
+               << "- JACK is optional for low-latency routing when the DAW route is validated.\n"
+               << "- Safety gate: all capture is sequential, output-folder scoped, and rollback-ready.\n\n"
+               << "## 4. DAW route\n"
+               << "- Desktop Linux route is supported as a capability record, not a live qualified route.\n"
+               << "- Target DAWs remain exchange-first until the specific Linux adapter is qualified.\n\n";
+    } else if (normalized == "android") {
+        stream << "## 1. Device acquisition and discovery\n"
+               << "- Android USB host / OTG discovery and permission checks via the Android runtime.\n"
+               << "- Device identity and permission grants are required before any hardware endpoint is opened.\n"
+               << "- Safety gate: direct host control is disabled unless the Android companion route is explicitly enabled.\n\n"
+               << "## 2. MIDI backend\n"
+               << "- Companion route uses Android MIDI APIs or virtual port bridge where vendor support is available.\n"
+               << "- MIDI mapping remains canonicalized and subject to user approval.\n"
+               << "- Safety gate: direct write-back remains disabled until the route is qualified.\n\n"
+               << "## 3. Audio backend\n"
+               << "- AAudio and Android audio routing are used only in approved companion workflows.\n"
+               << "- Device capture remains multi-stage and testable with explicit approval.\n"
+               << "- Safety gate: value ranges and transport timing must be validated before the route is live.\n\n"
+               << "## 4. DAW route\n"
+               << "- Android route is a mobile-companion path, not a desktop host claiming full DAW control.\n"
+               << "- FL Studio Mobile / GarageBand style flows use exchange and companion sync only until the route is certified.\n\n";
+    } else if (normalized == "chromeos") {
+        stream << "## 1. Device acquisition and discovery\n"
+               << "- ChromeOS USB enumeration and permission gating with vendor-specific USB host checks where available.\n"
+               << "- Device identity and runtime permission are required before any endpoint is opened.\n"
+               << "- Safety gate: the route remains a capability plan until device and host qualification is complete.\n\n"
+               << "## 2. MIDI and audio backend\n"
+               << "- ChromeOS companion flow depends on Android/Linux-compatible USB host and audio routing on the device stack.\n"
+               << "- Capture and routing remain exchange-first until validated.\n"
+               << "- Safety gate: no live synchronization is enabled without explicit user approval.\n\n"
+               << "## 4. DAW route\n"
+               << "- This route is a future mobile/tablet companion path, not a direct live DAW runtime.\n"
+               << "- DAW hand-off remains exchange or companion based until verified.\n\n";
+    } else if (normalized == "ipados" || normalized == "ios") {
+        stream << "## 1. Device acquisition and discovery\n"
+               << "- iOS/iPadOS route uses the device's USB host + companion app permissions and approved device pairing.\n"
+               << "- Device identity is verified before any hardware endpoint is opened.\n"
+               << "- Safety gate: the route is companion-only until the host API and hardware contract are qualified.\n\n"
+               << "## 2. MIDI backend\n"
+               << "- CoreMIDI and companion app routing are used for approved traffic only.\n"
+               << "- Timing and clock alignment must be validated before any state sync is activated.\n"
+               << "- Safety gate: no direct write-back is enabled until the route is confirmed.\n\n"
+               << "## 3. Audio backend\n"
+               << "- CoreAudio and the mobile audio system are used for approved capture and companion routing.\n"
+               << "- The route remains output-folder scoped and does not claim direct hardware write-back.\n"
+               << "- Safety gate: every capture and route remains reversible.\n\n"
+               << "## 4. DAW route\n"
+               << "- This is a mobile-companion route for GarageBand / FL Studio Mobile / other app hosts, not a direct desktop DAW bridge.\n"
+               << "- Project handoff remains exchange-first and user-approved.\n\n";
+    } else {
+        stream << "## 1. Generic cross-platform route\n"
+               << "- This is a capability record for a platform that is not live-qualified in the current runtime.\n"
+               << "- The runtime must resolve the exact device, host API, and DAW route before any hardware action occurs.\n"
+               << "- Safety gate: no device or host writes are allowed until the route is qualified.\n\n";
+    }
+
+    stream << "## 5. Approval and rollback\n"
+           << "- User must approve the bridge session before any hardware route or write-back is opened.\n"
+           << "- Every change is journaled with diff validation, conflict detection, and rollback support.\n"
+           << "- Safety gate: any mismatch between source revision, output session, or DAW state aborts the write-back.\n\n"
+           << "## 6. Scope that remains external\n"
+           << "- Real vendor SDK contracts, firmware validation, DAW host APIs, and live hardware qualification remain external to this sandboxed repo.\n"
+           << "- This is the production implementation blueprint, not a hardware-verified live session.\n";
+    return stream.str();
+}
+
+[[nodiscard]] std::string readiness_summary_json(const Session& session) {
+    std::ostringstream stream;
+    const auto current_stage = session.platform.runtime_qualified ? "foundation-qualified" : "foundation-pre-release";
+    stream << "{\n"
+           << "  \"product_stage\": \"foundation-pre-release\",\n"
+           << "  \"current_stage\": \"" << current_stage << "\",\n"
+           << "  \"live_bridge_complete\": false,\n"
+           << "  \"safe_bridge_mode\": true,\n"
+           << "  \"next_gate\": \"single_device_route_validation\",\n"
+           << "  \"implemented_capabilities\": [\n"
+           << "    \"read_only_project_intake\",\n"
+           << "    \"source_safety_guard\",\n"
+           << "    \"asset_inventory_and_fingerprinting\",\n"
+           << "    \"output_bundle_and_manifest_generation\",\n"
+           << "    \"multi_daw_profile_catalog\"\n"
+           << "  ],\n"
+           << "  \"blocked_capabilities\": [\n"
+           << "    \"live_mpc_project_parsing\",\n"
+           << "    \"hardware_write_back\",\n"
+           << "    \"bidirectional_daW_sync\",\n"
+           << "    \"vendor_sdk_host_integration\"\n"
+           << "  ],\n"
+           << "  \"required_vendor_access\": [\n"
+           << "    \"Akai MPC Sample project and firmware contract\",\n"
+           << "    \"Windows host driver and API qualification\",\n"
+           << "    \"DAW host adapter for the target route\"\n"
+           << "  ]\n"
+           << "}\n";
+    return stream.str();
+}
+
 [[nodiscard]] std::string markdown_report(const Session& session, const Options& options) {
     std::size_t warnings = 0;
     for (const auto& finding : session.findings) {
@@ -605,10 +822,12 @@ void write_findings_json(std::ostringstream& stream, const std::vector<Finding>&
     }
 
     std::ostringstream stream;
+    const auto daw_name = daw_display_name(session.daw);
+    const auto import_tag = daw_import_tag(session.daw);
     stream << "# Universal Bridge Preflight Report\n\n"
            << "**Session:** `" << session.id << "`  \n"
            << "**Created:** " << session.created_at << "  \n"
-           << "**Selected workflow:** MPC Sample → " << session.platform.id << " → " << (session.daw == "cubase" ? "Cubase" : "Reason") << "  \n"
+           << "**Selected workflow:** MPC Sample → " << session.platform.id << " → " << daw_name << "  \n"
            << "**Platform state:** `" << session.platform.state << "` / `" << session.platform.host_mode << "`  \n"
            << "**Source safety:** Read-only source; all generated data is written below the selected output folder.\n\n"
            << "> This developer prototype creates a transparent exchange package. It does not modify the source hardware project, write back to the MPC, generate proprietary DAW project files, or claim live synchronization.\n\n"
@@ -619,7 +838,7 @@ void write_findings_json(std::ostringstream& stream, const std::vector<Finding>&
            << "| Asset inventory and fingerprinting | Supported in the shared core |\n"
            << "| USB MIDI route | " << (session.capability.usb_midi ? "Profile-declared; hardware service not yet active" : "Not active on this platform profile") << " |\n"
            << "| USB audio | " << (session.capability.usb_audio ? "Two-channel profile declaration; capture is not yet active" : "Not active on this platform profile") << " |\n"
-           << "| Direct " << (session.daw == "cubase" ? "Cubase" : "Reason") << " project creation | Intentionally gated pending adapter validation |\n"
+           << "| Direct " << daw_name << " project creation | Intentionally gated pending adapter validation |\n"
            << "| VST3 bridge client | " << (session.platform.desktop_plugin_route ? "Architecture target; not shipped in this CLI prototype" : "Not an active generic mobile/tablet route") << " |\n"
            << "| Sequential stem capture | Gated pending reliable device-control validation |\n"
            << "| Live bidirectional state synchronization | Not enabled |\n\n"
@@ -637,15 +856,21 @@ void write_findings_json(std::ostringstream& stream, const std::vector<Finding>&
            << "| `diagnostics.json` | Machine-readable preflight findings |\n"
            << "| `Exchange/Audio/` | Copied audio assets, retaining original relative structure |\n"
            << "| `Exchange/MIDI/` | Copied MIDI assets, retaining original relative structure |\n"
-           << "| `Exchange/IMPORT_" << (session.daw == "cubase" ? "CUBASE" : "REASON") << ".md` | Target-specific import procedure and limitations |\n"
+           << "| `Exchange/IMPORT_" << import_tag << ".md` | Target-specific import procedure and limitations |\n"
            << "| `Backup/` | Read-only project backup copy, if enabled |\n\n"
+           << "## Stage-gate readiness\n\n"
+           << "| Gate | Status | Notes |\n|---|---|---|\n"
+           << "| Product stage | Foundation pre-release | The current build is a safe read-only bridge foundation, not a live hardware bridge |\n"
+           << "| Live hardware sync | Blocked | Requires actual device, vendor API, and DAW host qualification |\n"
+           << "| Next executable milestone | Single real route | Implement one validated route such as MPC Sample -> Windows -> Cubase before broadening scope |\n"
+           << "| Required operational evidence | External | Vendor contract, hardware-in-the-loop tests, and host adapter validation are still needed |\n\n"
            << "## Findings\n\n"
            << "| Severity | Code | Detail | Recommendation |\n|---|---|---|---|\n";
     for (const auto& finding : session.findings) {
         stream << "| " << finding.severity << " | `" << finding.code << "` | " << finding.message << " | " << finding.recommendation << " |\n";
     }
     stream << "\n## Import path\n\n"
-           << "Import the copied audio and MIDI assets into a new project in " << (session.daw == "cubase" ? "Cubase" : "Reason")
+           << "Import the copied audio and MIDI assets into a new project in " << daw_display_name(session.daw)
            << ". Preserve their relative names and consult the session manifest before recreating any routing, effects, or automation. The next adapter phase will convert this auditable exchange package into host-assisted creation where the DAW exposes a safe documented route.\n\n"
            << "## Source\n\n"
            << "Selected project folder: `" << path_to_posix(options.project) << "`\n";
@@ -653,7 +878,7 @@ void write_findings_json(std::ostringstream& stream, const std::vector<Finding>&
 }
 
 [[nodiscard]] std::string daw_import_guide(const Session& session) {
-    const std::string daw_name = session.daw == "cubase" ? "Cubase" : "Reason";
+    const std::string daw_name = daw_display_name(session.daw);
     std::ostringstream stream;
     stream << "# " << daw_name << " Exchange Package\n\n"
            << "This package was generated by the Universal Hardware Session Bridge developer prototype. It preserves source assets and metadata without modifying the original MPC project.\n\n"
@@ -750,8 +975,9 @@ void preflight(const Options& options) {
 
     write_text(options.output / "session.ubridge.json", session_json(session));
     write_text(options.output / "diagnostics.json", diagnostics_json(session));
+    write_text(options.output / "readiness-summary.json", readiness_summary_json(session));
     write_text(options.output / "preflight-report.md", markdown_report(session, options));
-    write_text(options.output / "Exchange" / (session.daw == "cubase" ? "IMPORT_CUBASE.md" : "IMPORT_REASON.md"), daw_import_guide(session));
+    write_text(options.output / "Exchange" / ("IMPORT_" + daw_import_tag(session.daw) + ".md"), daw_import_guide(session));
 
     std::cout << "Preflight completed safely\n"
               << "Session: " << session.id << "\n"
@@ -792,13 +1018,59 @@ void list_devices() {
 
 int main(int argc, char* argv[]) {
     try {
-        if (argc == 2 && std::string_view(argv[1]) == "--help") {
+        if (argc == 1 || (argc == 2 && (std::string_view(argv[1]) == "--help" || std::string_view(argv[1]) == "help"))) {
             std::cout << ubridge::usage();
             return 0;
         }
-        if (argc == 2 && std::string_view(argv[1]) == "devices") {
-            ubridge::list_devices();
+        if (argc >= 2 && std::string_view(argv[1]) == "devices") {
+            if (argc == 2 || (argc == 3 && std::string_view(argv[2]) == "--help")) {
+                if (argc == 2) {
+                    ubridge::list_devices();
+                } else {
+                    std::cout << ubridge::usage();
+                }
+                return 0;
+            }
+        }
+        if (argc >= 2 && std::string_view(argv[1]) == "route") {
+            std::string device = "mpc-sample";
+            std::string daw = "cubase";
+            std::string platform = "windows";
+            for (int index = 2; index < argc; ++index) {
+                const std::string argument = argv[index];
+                if (argument == "--help") {
+                    std::cout << ubridge::usage();
+                    return 0;
+                }
+                if (argument == "--device" && index + 1 < argc) {
+                    device = ubridge::lower(argv[++index]);
+                } else if (argument == "--daw" && index + 1 < argc) {
+                    daw = ubridge::lower(argv[++index]);
+                } else if (argument == "--target-os" && index + 1 < argc) {
+                    platform = ubridge::lower(argv[++index]);
+                } else {
+                    throw std::runtime_error("Unknown route option: " + argument + "\n\n" + ubridge::usage());
+                }
+            }
+            if (!ubridge::valid_device(device)) {
+                throw std::runtime_error("Supported hardware device profiles are: " + ubridge::supported_device_list() + ".");
+            }
+            if (!ubridge::valid_daw(daw)) {
+                throw std::runtime_error("Supported DAW targets are: " + ubridge::supported_daw_list() + ".");
+            }
+            if (!ubridge::valid_platform(platform)) {
+                throw std::runtime_error("Supported target operating systems are windows, macos, linux, android, chromeos, ipados, and ios.");
+            }
+            std::cout << ubridge::platform_runtime_route_manifest(platform, device, daw);
             return 0;
+        }
+        if (argc >= 2 && std::string_view(argv[1]) == "preflight") {
+            for (int index = 2; index < argc; ++index) {
+                if (std::string_view(argv[index]) == "--help") {
+                    std::cout << ubridge::usage();
+                    return 0;
+                }
+            }
         }
         const auto options = ubridge::parse_options(argc, argv);
         ubridge::preflight(options);

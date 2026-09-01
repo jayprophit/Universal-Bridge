@@ -93,8 +93,14 @@ std::vector<DeviceProfile> builtin_device_profiles() {
             {"read_only_project_intake", "audio_midi_exchange", "external_backup", "assisted_capture"}
         },
         {
-            "akai.mpc-modern", "Akai", "Modern MPC family", "A",
-            device_capability("akai.mpc-modern", true, true, true, true, 8, false, false, true, false, false),
+            "akai.mpc-one", "Akai", "MPC One / Live / X", "A",
+            device_capability("akai.mpc-one", true, true, true, true, 8, false, false, true, false, false),
+            false, false,
+            {"read_only_project_intake", "audio_midi_exchange", "capability_report"}
+        },
+        {
+            "akai.mpc-live", "Akai", "MPC Live", "A",
+            device_capability("akai.mpc-live", true, true, true, true, 8, false, false, true, false, false),
             false, false,
             {"read_only_project_intake", "audio_midi_exchange", "capability_report"}
         },
@@ -123,6 +129,18 @@ std::vector<DeviceProfile> builtin_device_profiles() {
             {"midi_exchange", "analogue_audio_capture_plan", "capability_report"}
         },
         {
+            "audient.interface", "Audient", "Audient USB audio interface", "B",
+            device_capability("audient.interface", false, true, true, true, 8, false, false, true, false, false),
+            false, false,
+            {"audio_midi_exchange", "adapter_route", "capture_plan"}
+        },
+        {
+            "midi.keyboard", "Generic", "MIDI keyboard controller", "B",
+            device_capability("midi.keyboard", false, true, true, false, 0, false, false, true, false, false),
+            false, false,
+            {"midi_exchange", "controller_mapping", "capture_plan"}
+        },
+        {
             "akai.mpc-legacy", "Akai", "Legacy MPC", "D",
             device_capability("akai.mpc-legacy", true, true, true, true, 2, false, false, true, false, false),
             false, false,
@@ -136,8 +154,10 @@ std::vector<DawProfile> builtin_daw_profiles() {
         {"cubase", "Cubase", daw_capability("cubase", true), {"audio_midi_exchange", "vst3_client_future"}},
         {"reason", "Reason", daw_capability("reason", true), {"audio_midi_exchange", "vst3_client_future", "rack_extension_feasibility"}},
         {"ableton-live", "Ableton Live", daw_capability("ableton-live", true), {"audio_midi_exchange", "vst3_client_future"}},
+        {"garageband", "GarageBand", daw_capability("garageband", false), {"audio_midi_exchange", "mobile_route_future"}},
         {"logic-pro", "Logic Pro", daw_capability("logic-pro", false), {"audio_midi_exchange", "au_client_future"}},
         {"fl-studio", "FL Studio", daw_capability("fl-studio", true), {"audio_midi_exchange", "vst3_client_future"}},
+        {"fl-studio-mobile", "FL Studio Mobile", daw_capability("fl-studio-mobile", false), {"audio_midi_exchange", "mobile_route_future"}},
         {"reaper", "Reaper", daw_capability("reaper", true), {"audio_midi_exchange", "vst3_client_future"}},
         {"studio-one", "Studio One", daw_capability("studio-one", true), {"audio_midi_exchange", "vst3_client_future"}},
         {"pro-tools", "Pro Tools", daw_capability("pro-tools", false), {"audio_midi_exchange", "aax_feasibility"}},

@@ -61,11 +61,15 @@ def validate_exchange(daw: str) -> None:
     after = source_snapshot()
     assert before == after, "Preflight modified a source project fixture"
     assert "Preflight completed safely" in result.stdout
+    assert (output / "readiness-summary.json").is_file()
 
     session = json.loads((output / "session.ubridge.json").read_text(encoding="utf-8"))
     diagnostics = json.loads((output / "diagnostics.json").read_text(encoding="utf-8"))
+    readiness = json.loads((output / "readiness-summary.json").read_text(encoding="utf-8"))
 
     assert session["safety_mode"] == "read_only_source"
+    assert readiness["product_stage"] == "foundation-pre-release"
+    assert readiness["live_bridge_complete"] is False
     assert session["reference_route"]["target_daw"] == daw
     assert session["effective_capability"]["audio_channels"] == 2
     assert session["effective_capability"]["direct_daw_project_generation"] is False
@@ -136,7 +140,7 @@ def validate_safety_guards() -> None:
         str(OUTPUT_ROOT / "invalid-daw"),
         expect_success=False,
     )
-    assert "supports only Cubase or Reason" in result.stderr
+    assert "Supported DAW targets are:" in result.stderr
 
     result = run(
         "preflight",
@@ -153,6 +157,50 @@ def validate_safety_guards() -> None:
     assert "Supported target operating systems" in result.stderr
 
 
+def validate_help_commands() -> None:
+    help_result = run("--help")
+    assert "Usage:" in help_result.stdout
+    assert "ubridge preflight" in help_result.stdout
+
+    preflight_help = run("preflight", "--help")
+    assert "Usage:" in preflight_help.stdout
+    assert "--project <folder>" in preflight_help.stdout
+
+    route_help = run("route", "--help")
+    assert "Usage:" in route_help.stdout
+    assert "ubridge route" in route_help.stdout
+    assert "Example live runtime: MPC Sample -> Windows 11 -> Cubase" in route_help.stdout
+
+    devices_help = run("devices", "--help")
+    assert "Usage:" in devices_help.stdout
+    assert "ubridge devices" in devices_help.stdout
+
+    for platform in ("windows", "macos", "linux", "android", "chromeos", "ipados", "ios"):
+        route_result = run("route", "--device", "mpc-sample", "--daw", "cubase", "--target-os", platform)
+        assert "Target device: mpc-sample" in route_result.stdout
+        assert "Host OS: " + platform in route_result.stdout
+
+
+def validate_multidaw_and_hardware_profiles() -> None:
+    for daw in ("cubase", "reason", "fl-studio", "garageband", "ableton-live"):
+        output = OUTPUT_ROOT / f"multidaw-{daw}"
+        result = run(
+            "preflight",
+            "--project",
+            str(FIXTURE),
+            "--daw",
+            daw,
+            "--device",
+            "audient",
+            "--output",
+            str(output),
+        )
+        assert "Preflight completed safely" in result.stdout
+        session = json.loads((output / "session.ubridge.json").read_text(encoding="utf-8"))
+        assert session["reference_route"]["target_daw"] == daw
+        assert session["reference_route"]["device_profile"] == "audient"
+
+
 def main() -> int:
     if not BINARY.is_file():
         raise SystemExit(f"Expected built binary at {BINARY}. Build with CMake first.")
@@ -167,6 +215,8 @@ def main() -> int:
     validate_platform_contract("ipados", "future_mobile_host", False, False)
     validate_platform_contract("ios", "future_mobile_host", False, False)
     validate_safety_guards()
+    validate_help_commands()
+    validate_multidaw_and_hardware_profiles()
     print("All Universal Bridge prototype validation checks passed.")
     return 0
 
