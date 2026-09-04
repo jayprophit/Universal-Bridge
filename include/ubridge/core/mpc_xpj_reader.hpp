@@ -1,0 +1,33 @@
+#pragma once
+
+#include "ubridge/core/bridge_core.hpp"
+
+#include <cstddef>
+#include <filesystem>
+#include <string>
+#include <vector>
+
+namespace ubridge::mpc {
+
+struct XpjInspection {
+    bool readable = false;
+    bool gzip_container = false;
+    bool json_payload = false;
+    int schema_version = 0;
+    double master_tempo = 0.0;
+    std::size_t sample_count = 0;
+    std::size_t track_count = 0;
+    std::size_t sequence_count = 0;
+    std::size_t song_slot_count = 0;
+    std::size_t available_asset_count = 0;
+    std::size_t missing_asset_count = 0;
+    std::vector<std::string> preamble;
+    std::vector<std::string> sample_names;
+    std::vector<core::Diagnostic> diagnostics;
+};
+
+// Read-only: opens the XPJ and its sibling ProjectData directory without
+// creating, changing, or deleting anything in the source folder.
+[[nodiscard]] XpjInspection inspect_xpj(const std::filesystem::path& project_file);
+
+} // namespace ubridge::mpc

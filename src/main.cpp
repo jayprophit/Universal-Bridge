@@ -1,4 +1,5 @@
 #include "ubridge/bridge_modules.hpp"
+#include "ubridge/core/mpc_xpj_reader.hpp"
 #include "ubridge/platform/hardware_backends.hpp"
 
 #include <algorithm>
@@ -314,6 +315,7 @@ Usage:
   ubridge preflight --project <folder> --daw <cubase|reason|ableton-live|fl-studio|garageband|logic-pro|reaper|studio-one|pro-tools|mobile-generic> --output <folder> [options]
   ubridge route --device <mpc-sample|mpc-one|mpc-live|audient|audient-usb|midi-keyboard|midi-controller|generic-midi-controller|generic-usb-audio> --daw <cubase|reason|ableton-live|fl-studio|garageband|logic-pro|reaper|studio-one|pro-tools|mobile-generic>
   ubridge devices
+  ubridge xpj-inspect --project <working-copy.xpj>
   ubridge midi-monitor --name <endpoint name> [--seconds <1-30>]
   ubridge midi-send-note --name <endpoint name> --note <0-127> --velocity <1-127> [--duration-ms <20-2000>]
  
@@ -1132,6 +1134,25 @@ int main(int argc, char* argv[]) {
                 }
                 return 0;
             }
+        }
+        if (argc >= 2 && std::string_view(argv[1]) == "xpj-inspect") {
+            fs::path project;
+            for (int index = 2; index < argc; ++index) {
+                const std::string argument = argv[index];
+                if (argument == "--project" && index + 1 < argc) project = argv[++index];
+                else throw std::runtime_error("Unknown xpj-inspect option: " + argument + "\n\n" + ubridge::usage());
+            }
+            if (project.empty()) throw std::runtime_error("xpj-inspect requires --project <working-copy.xpj>.");
+            const auto report = ubridge::mpc::inspect_xpj(project);
+            std::cout << "MPC XPJ read-only inspection\nReadable: " << (report.readable ? "yes" : "no")
+                      << "\nGzip container: " << (report.gzip_container ? "yes" : "no")
+                      << "\nJSON payload: " << (report.json_payload ? "yes" : "no")
+                      << "\nSchema version: " << report.schema_version << "\nMaster tempo: " << report.master_tempo
+                      << "\nSamples: " << report.sample_count << " (resolved " << report.available_asset_count << ", missing " << report.missing_asset_count << ")"
+                      << "\nTracks: " << report.track_count << "\nSequences: " << report.sequence_count
+                      << "\nSong slots: " << report.song_slot_count << "\nSource changes: none\n";
+            for (const auto& diagnostic : report.diagnostics) std::cout << "[" << diagnostic.code << "] " << diagnostic.message << "\n";
+            return report.json_payload ? 0 : 1;
         }
         if (argc >= 2 && std::string_view(argv[1]) == "midi-monitor") {
             std::string name; int seconds = 10;

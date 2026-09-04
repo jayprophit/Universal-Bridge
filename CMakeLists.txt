@@ -4,6 +4,7 @@ project(UniversalBridge VERSION 0.5.0 LANGUAGES CXX)
 
 include(GNUInstallDirs)
 include(CTest)
+include(FetchContent)
 
 option(UBRIDGE_BUILD_TESTS "Build deterministic offline tests" ON)
 option(UBRIDGE_WARNINGS_AS_ERRORS "Treat compiler warnings as errors" OFF)
@@ -12,6 +13,20 @@ option(UBRIDGE_STATIC_MSVC_RUNTIME "Statically link the MSVC runtime for portabl
 if(MSVC AND UBRIDGE_STATIC_MSVC_RUNTIME)
     set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
 endif()
+
+FetchContent_Declare(zlib
+    GIT_REPOSITORY https://github.com/madler/zlib.git
+    GIT_TAG v1.3.2
+    GIT_SHALLOW TRUE)
+set(ZLIB_BUILD_TESTING OFF CACHE BOOL "" FORCE)
+set(ZLIB_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+set(ZLIB_INSTALL OFF CACHE BOOL "" FORCE)
+FetchContent_MakeAvailable(zlib)
+
+FetchContent_Declare(nlohmann_json
+    URL https://github.com/nlohmann/json/releases/download/v3.12.0/json.tar.xz
+    URL_HASH SHA256=42f6e95cad6ec532fd372391373363b62a14af6d771056dbfc86160e6dfff7aa)
+FetchContent_MakeAvailable(nlohmann_json)
 
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -23,9 +38,11 @@ add_library(ubridge_core STATIC
     src/core/session_tools.cpp
     src/core/performance_tools.cpp
     src/core/sync_guard.cpp
+    src/core/mpc_xpj_reader.cpp
 )
 target_include_directories(ubridge_core PUBLIC include)
 target_compile_features(ubridge_core PUBLIC cxx_std_20)
+target_link_libraries(ubridge_core PUBLIC zlibstatic nlohmann_json::nlohmann_json)
 
 add_library(ubridge_modules STATIC
     src/adapters/bridge_modules.cpp

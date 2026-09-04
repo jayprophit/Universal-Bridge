@@ -1,5 +1,6 @@
 #include "ubridge/bridge_modules.hpp"
 #include "ubridge/core/performance_tools.hpp"
+#include "ubridge/core/mpc_xpj_reader.hpp"
 #include "ubridge/core/session_tools.hpp"
 #include "ubridge/core/sync_guard.hpp"
 #include "ubridge/platform/hardware_backends.hpp"
@@ -10,6 +11,9 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <filesystem>
+#include <fstream>
+#include <zlib.h>
 
 namespace {
 
@@ -83,6 +87,23 @@ void mobile_and_audio_safety_test() {
 
     const auto midi = ubridge::modules::plan_midi_route(device, android, usb);
     expect(!midi.allowed, "live MIDI must stay disabled before virtual MIDI backend qualification");
+}
+
+void xpj_reader_test() {
+    const auto root = std::filesystem::temp_directory_path() / "ubridge-xpj-reader-test";
+    std::filesystem::create_directories(root / "Fixture_[ProjectData]");
+    std::ofstream(root / "Fixture_[ProjectData]" / "Kick.wav", std::ios::binary).put('\0');
+    const std::string payload = "ACVS\n1.3.0.12\nSerialisableProjectData\njson\nLinux\n{\"data\":{\"version\":28,\"masterTempo\":96.5,\"samples\":[{\"name\":\"Kick.wav\"}],\"tracks\":[{}],\"sequences\":[{},{}],\"songs\":[{}]}}";
+    const auto xpj = root / "Fixture.xpj";
+    gzFile file = gzopen(xpj.string().c_str(), "wb");
+    expect(file != nullptr, "test XPJ gzip fixture must open");
+    expect(gzwrite(file, payload.data(), static_cast<unsigned int>(payload.size())) == static_cast<int>(payload.size()), "test XPJ payload must write");
+    gzclose(file);
+    const auto report = ubridge::mpc::inspect_xpj(xpj);
+    expect(report.json_payload && report.schema_version == 28, "XPJ reader must decode gzip preamble and JSON schema");
+    expect(report.master_tempo == 96.5 && report.sample_count == 1 && report.track_count == 1, "XPJ reader must report core project counts");
+    expect(report.sequence_count == 2 && report.song_slot_count == 1 && report.available_asset_count == 1, "XPJ reader must resolve sibling project assets");
+    std::filesystem::remove_all(root);
 }
 
 void protocol_evidence_and_host_negotiation_test() {
@@ -378,6 +399,7 @@ void virtual_device_test() {
 } // namespace
 
 int main() {
+    xpj_reader_test();
     profile_registry_test();
     negotiation_and_workflow_test();
     mobile_and_audio_safety_test();
