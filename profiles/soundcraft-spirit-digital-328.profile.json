@@ -6,8 +6,10 @@
   "connection": {
     "current_user_route": "optical-to-audio-interface",
     "audio_interface": "Audient iD14",
-    "transport": "user_confirmation_required",
-    "possible_optical_formats": ["adat-optical", "spdif-optical"]
+    "desk_output": "aux-optical-out",
+    "interface_input": "optical-in",
+    "transport": "adat-optical",
+    "physical_route_evidence": "user-confirmed-and-photo-observed"
   },
   "documented_capability_model": {
     "adat_optical": "two eight-channel input and output groups",
@@ -18,8 +20,9 @@
   "current_evidence": {
     "desk_identity": "declared-by-user",
     "audient_windows_endpoints": "observed",
-    "optical_format": "unavailable-until-user-confirms-port-and-interface-routing",
-    "live_audio": "unavailable-until-metered-capture-test",
+    "optical_format": "observed-adat-aux-optical-route",
+    "aux_output_assignment": "unavailable-until-desk-menu-is-inspected",
+    "live_audio": "observed-at-audient-endpoints; source-channel-association-awaits-controlled-signal-test",
     "mixer_control": "unavailable"
   },
   "safe_operations": [

@@ -40,6 +40,13 @@ struct AudioEndpoint {
     std::uint16_t bits_per_sample = 0;
 };
 
+struct AudioSignalProbe {
+    bool opened = false;
+    std::uint64_t frames_observed = 0;
+    float peak = 0.0F;
+    std::string status;
+};
+
 struct UsbInterface {
     std::string instance_id;
     std::string container_id;
@@ -82,6 +89,7 @@ public:
     virtual ~IAudioBackend() = default;
     [[nodiscard]] virtual BackendMaturity maturity() const noexcept = 0;
     [[nodiscard]] virtual std::vector<AudioEndpoint> enumerate_endpoints() const = 0;
+    [[nodiscard]] virtual AudioSignalProbe probe_input(std::string_view endpoint_id, std::uint32_t duration_ms) = 0;
     virtual bool begin_capture(std::string_view endpoint_id, int sample_rate, int channels) = 0;
     virtual void stop_capture() noexcept = 0;
 };

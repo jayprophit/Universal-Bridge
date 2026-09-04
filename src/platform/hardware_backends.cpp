@@ -12,6 +12,8 @@
 #include <propvarutil.h>
 #endif
 #include <algorithm>
+#include <chrono>
+#include <cmath>
 #include <cctype>
 #include <cwchar>
 #include <cwctype>
@@ -163,13 +165,65 @@ public:
         }
         e->Release(); if (cleanup) CoUninitialize(); return r;
     }
+    AudioSignalProbe probe_input(std::string_view endpoint_id, std::uint32_t duration_ms) override {
+        AudioSignalProbe result; const HRESULT init = CoInitializeEx(nullptr, COINIT_MULTITHREADED); const bool cleanup = SUCCEEDED(init);
+        IMMDeviceEnumerator* enumerator = nullptr; IMMDevice* device = nullptr; IAudioClient* client = nullptr; IAudioCaptureClient* capture = nullptr; WAVEFORMATEX* format = nullptr;
+        const std::wstring id(endpoint_id.begin(), endpoint_id.end());
+        if (FAILED(CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr, CLSCTX_ALL, IID_PPV_ARGS(&enumerator))) ||
+            FAILED(enumerator->GetDevice(id.c_str(), &device)) ||
+            FAILED(device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr, reinterpret_cast<void**>(&client))) ||
+            FAILED(client->GetMixFormat(&format))) {
+            result.status = "open_failed"; goto cleanup_probe;
+        }
+        {
+            const REFERENCE_TIME buffer_duration = 1'000'000;
+            if (FAILED(client->Initialize(AUDCLNT_SHAREMODE_SHARED, 0, buffer_duration, 0, format, nullptr)) ||
+                FAILED(client->GetService(IID_PPV_ARGS(&capture))) || FAILED(client->Start())) {
+                result.status = "initialize_failed"; goto cleanup_probe;
+            }
+            result.opened = true; result.status = "silence";
+            const bool floating = format->wFormatTag == WAVE_FORMAT_IEEE_FLOAT ||
+                (format->wFormatTag == WAVE_FORMAT_EXTENSIBLE &&
+                 reinterpret_cast<WAVEFORMATEXTENSIBLE*>(format)->SubFormat.Data1 == WAVE_FORMAT_IEEE_FLOAT);
+            const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(duration_ms);
+            while (std::chrono::steady_clock::now() < deadline) {
+                UINT32 packets = 0; if (FAILED(capture->GetNextPacketSize(&packets))) { result.status = "read_failed"; break; }
+                while (packets > 0) {
+                    BYTE* data = nullptr; UINT32 frames = 0; DWORD flags = 0;
+                    if (FAILED(capture->GetBuffer(&data, &frames, &flags, nullptr, nullptr))) { result.status = "read_failed"; break; }
+                    result.frames_observed += frames;
+                    if (!(flags & AUDCLNT_BUFFERFLAGS_SILENT) && data) {
+                        const std::size_t samples = static_cast<std::size_t>(frames) * format->nChannels;
+                        if (floating && format->wBitsPerSample == 32) {
+                            const auto* values = reinterpret_cast<const float*>(data);
+                            for (std::size_t i = 0; i < samples; ++i) result.peak = (std::max)(result.peak, std::abs(values[i]));
+                        } else if (format->wBitsPerSample == 16) {
+                            const auto* values = reinterpret_cast<const std::int16_t*>(data);
+                            for (std::size_t i = 0; i < samples; ++i) result.peak = (std::max)(result.peak, std::abs(static_cast<float>(values[i]) / 32768.0F));
+                        }
+                    }
+                    capture->ReleaseBuffer(frames); if (FAILED(capture->GetNextPacketSize(&packets))) { packets = 0; result.status = "read_failed"; }
+                }
+                Sleep(10);
+            }
+            client->Stop(); if (result.peak > 0.00001F) result.status = "signal_observed";
+        }
+cleanup_probe:
+        if (capture) capture->Release();
+        if (format) CoTaskMemFree(format);
+        if (client) client->Release();
+        if (device) device->Release();
+        if (enumerator) enumerator->Release();
+        if (cleanup) CoUninitialize();
+        return result;
+    }
     bool begin_capture(std::string_view, int, int) override { return false; }
     void stop_capture() noexcept override {}
 };
 #else
 class NullDeviceDiscovery final : public IDeviceDiscovery { public: std::vector<DiscoveredDevice> enumerate() override { return {}; } };
 class NullMidiBackend final : public IMidiBackend { public: BackendMaturity maturity() const noexcept override { return BackendMaturity::unavailable; } std::vector<MidiEndpoint> enumerate_endpoints() const override { return {}; } bool open_input(std::string_view, ReceiveCallback) override { return false; } bool open_output(std::string_view) override { return false; } void close(std::string_view) noexcept override {} bool connected(std::string_view) const noexcept override { return false; } bool send(std::string_view, std::span<const std::uint8_t>) override { return false; } };
-class NullAudioBackend final : public IAudioBackend { public: BackendMaturity maturity() const noexcept override { return BackendMaturity::unavailable; } std::vector<AudioEndpoint> enumerate_endpoints() const override { return {}; } bool begin_capture(std::string_view, int, int) override { return false; } void stop_capture() noexcept override {} };
+class NullAudioBackend final : public IAudioBackend { public: BackendMaturity maturity() const noexcept override { return BackendMaturity::unavailable; } std::vector<AudioEndpoint> enumerate_endpoints() const override { return {}; } AudioSignalProbe probe_input(std::string_view, std::uint32_t) override { return {}; } bool begin_capture(std::string_view, int, int) override { return false; } void stop_capture() noexcept override {} };
 #endif
 } // namespace
 

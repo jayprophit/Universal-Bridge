@@ -321,6 +321,7 @@ Options:
   --no-backup            Do not create a read-only project backup copy.
   --no-copy-assets       Inventory assets but do not copy audio/MIDI into Exchange/.
   devices --probe-access Non-destructively open/close every MIDI endpoint; sends no data.
+  devices --probe-audio  Receive-only signal check on active audio inputs; stores no audio.
   --help                 Show this help text.
  
 Safety model:
@@ -989,7 +990,7 @@ void preflight(const Options& options) {
               << "Warnings: " << std::count_if(session.findings.begin(), session.findings.end(), [](const Finding& finding) { return finding.severity == "warning"; }) << "\n";
 }
 
-void list_devices(bool probe_access = false) {
+void list_devices(bool probe_access = false, bool probe_audio = false) {
     auto discovery = platform::make_system_device_discovery();
     const auto devices = discovery->enumerate();
     auto midi = platform::make_system_midi_backend();
@@ -1042,6 +1043,17 @@ void list_devices(bool probe_access = false) {
                   << " mix-format=" << endpoint.channels << "ch/" << endpoint.sample_rate << "Hz/"
                   << endpoint.bits_per_sample << "bit\n";
     }
+    if (probe_audio) {
+        std::cout << "\nAudio receive-only signal probe (400 ms per active input):\n";
+        for (const auto& endpoint : audio_endpoints) {
+            if (endpoint.direction != platform::EndpointDirection::input) continue;
+            const auto probe = audio->probe_input(endpoint.id, 400);
+            std::cout << "  " << endpoint.name << " access=" << (probe.opened ? "opened" : "unavailable_or_busy")
+                      << " frames=" << probe.frames_observed << " peak=" << probe.peak
+                      << " status=" << probe.status << "\n";
+        }
+        std::cout << "No audio was retained or written. Every opened capture client was stopped and closed.\n";
+    }
     std::cout << "\nNo interfaces were opened during enumeration. Enumeration does not qualify live MIDI, audio capture, synchronization, storage, or proprietary control.\n";
 }
 
@@ -1054,9 +1066,10 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         if (argc >= 2 && std::string_view(argv[1]) == "devices") {
-            if (argc == 2 || (argc == 3 && (std::string_view(argv[2]) == "--help" || std::string_view(argv[2]) == "--probe-access"))) {
-                if (argc == 2 || std::string_view(argv[2]) == "--probe-access") {
-                    ubridge::list_devices(argc == 3);
+            if (argc == 2 || (argc == 3 && (std::string_view(argv[2]) == "--help" || std::string_view(argv[2]) == "--probe-access" || std::string_view(argv[2]) == "--probe-audio"))) {
+                if (argc == 2 || std::string_view(argv[2]) == "--probe-access" || std::string_view(argv[2]) == "--probe-audio") {
+                    ubridge::list_devices(argc == 3 && std::string_view(argv[2]) == "--probe-access",
+                                          argc == 3 && std::string_view(argv[2]) == "--probe-audio");
                 } else {
                     std::cout << ubridge::usage();
                 }
