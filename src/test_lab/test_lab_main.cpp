@@ -31,10 +31,12 @@ void profile_registry_test() {
     const auto devices = ubridge::modules::builtin_device_profiles();
     const auto daws = ubridge::modules::builtin_daw_profiles();
     const auto platforms = ubridge::modules::builtin_platform_profiles();
-    expect(devices.size() >= 7, "device catalog must contain MPC, SP, Elektron, Maschine, Circuit, and legacy scaffolds");
+    expect(devices.size() >= 12, "device catalog must contain instruments, interfaces, controllers, and mixing-desk profiles");
     expect(daws.size() >= 9, "DAW catalog must cover documented desktop and mobile host targets");
     expect(platforms.size() == 7, "platform catalog must hard-code all seven requested operating-system targets");
     expect(ubridge::modules::find_device_profile("akai.mpc-sample").has_value(), "MPC Sample profile must resolve");
+    expect(ubridge::modules::find_device_profile("mixing-desk.digital-generic").has_value(), "generic digital mixing desk profile must resolve");
+    expect(ubridge::modules::find_device_profile("soundcraft.spirit-digital-328").has_value(), "Soundcraft Spirit Digital 328 profile must resolve");
     expect(ubridge::modules::find_daw_profile("cubase").has_value(), "Cubase profile must resolve");
     expect(ubridge::modules::find_daw_profile("reason").has_value(), "Reason profile must resolve");
     expect(ubridge::modules::find_platform_profile("ipados").has_value(), "iPadOS profile must resolve");

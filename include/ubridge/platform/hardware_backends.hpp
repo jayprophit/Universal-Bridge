@@ -35,6 +35,9 @@ struct AudioEndpoint {
     std::string name;
     EndpointDirection direction = EndpointDirection::input;
     bool active = false;
+    std::uint32_t sample_rate = 0;
+    std::uint16_t channels = 0;
+    std::uint16_t bits_per_sample = 0;
 };
 
 struct UsbInterface {

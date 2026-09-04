@@ -135,6 +135,18 @@ std::vector<DeviceProfile> builtin_device_profiles() {
             {"audio_midi_exchange", "adapter_route", "capture_plan"}
         },
         {
+            "mixing-desk.digital-generic", "Generic", "Digital mixing desk through an audio interface", "B",
+            device_capability("mixing-desk.digital-generic", false, false, false, true, 0, false, false, false, false, false),
+            false, false,
+            {"audio_endpoint_mapping", "channel_label_mapping", "clock_configuration_check", "capture_plan"}
+        },
+        {
+            "soundcraft.spirit-digital-328", "Soundcraft", "Spirit Digital 328", "B",
+            device_capability("soundcraft.spirit-digital-328", false, true, true, true, 16, false, false, true, false, false),
+            false, false,
+            {"adat_audio_via_interface", "spdif_stereo_via_interface", "midi_machine_control_requires_separate_midi_connection", "manual_channel_mapping"}
+        },
+        {
             "midi.keyboard", "Generic", "MIDI keyboard controller", "B",
             device_capability("midi.keyboard", false, true, true, false, 0, false, false, true, false, false),
             false, false,

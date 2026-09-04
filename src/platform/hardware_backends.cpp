@@ -7,6 +7,7 @@
 #include <propkey.h>
 #include <functiondiscoverykeys_devpkey.h>
 #include <mmdeviceapi.h>
+#include <audioclient.h>
 #include <mmsystem.h>
 #include <propvarutil.h>
 #endif
@@ -139,7 +140,25 @@ public:
         for (const auto direction : {EndpointDirection::input, EndpointDirection::output}) {
             IMMDeviceCollection* c = nullptr; const auto flow = direction == EndpointDirection::input ? eCapture : eRender;
             if (SUCCEEDED(e->EnumAudioEndpoints(flow, DEVICE_STATE_ACTIVE, &c))) { UINT count = 0; c->GetCount(&count);
-                for (UINT i = 0; i < count; ++i) { IMMDevice* d = nullptr; if (FAILED(c->Item(i, &d))) continue; LPWSTR id = nullptr; IPropertyStore* s = nullptr; PROPVARIANT name; PropVariantInit(&name); d->GetId(&id); d->OpenPropertyStore(STGM_READ, &s); if (s) s->GetValue(PKEY_Device_FriendlyName, &name); r.push_back({id ? utf8(id) : std::string{}, name.vt == VT_LPWSTR ? utf8(name.pwszVal) : std::string{}, direction, true}); PropVariantClear(&name); if (s) s->Release(); if (id) CoTaskMemFree(id); d->Release(); }
+                for (UINT i = 0; i < count; ++i) {
+                    IMMDevice* d = nullptr; if (FAILED(c->Item(i, &d))) continue;
+                    LPWSTR id = nullptr; IPropertyStore* s = nullptr; PROPVARIANT name; PropVariantInit(&name);
+                    d->GetId(&id); d->OpenPropertyStore(STGM_READ, &s); if (s) s->GetValue(PKEY_Device_FriendlyName, &name);
+                    AudioEndpoint endpoint{id ? utf8(id) : std::string{}, name.vt == VT_LPWSTR ? utf8(name.pwszVal) : std::string{}, direction, true};
+                    IAudioClient* client = nullptr;
+                    if (SUCCEEDED(d->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr, reinterpret_cast<void**>(&client)))) {
+                        WAVEFORMATEX* format = nullptr;
+                        if (SUCCEEDED(client->GetMixFormat(&format)) && format) {
+                            endpoint.sample_rate = format->nSamplesPerSec;
+                            endpoint.channels = format->nChannels;
+                            endpoint.bits_per_sample = format->wBitsPerSample;
+                            CoTaskMemFree(format);
+                        }
+                        client->Release();
+                    }
+                    r.push_back(std::move(endpoint));
+                    PropVariantClear(&name); if (s) s->Release(); if (id) CoTaskMemFree(id); d->Release();
+                }
                 c->Release(); }
         }
         e->Release(); if (cleanup) CoUninitialize(); return r;

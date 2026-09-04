@@ -246,6 +246,7 @@ void copy_safely(const fs::path& source, const fs::path& destination) {
     static const std::set<std::string> supported = {
         "mpc-sample", "mpc-one", "mpc-live", "audient", "audient-usb", "midi-keyboard",
         "midi-controller", "generic-midi-controller", "generic-usb-audio"
+        , "mixing-desk", "digital-mixing-desk", "soundcraft-spirit-digital-328"
     };
     return supported.contains(lower(device));
 }
@@ -300,7 +301,7 @@ void copy_safely(const fs::path& source, const fs::path& destination) {
 }
 
 [[nodiscard]] std::string supported_device_list() {
-   return "mpc-sample, mpc-one, mpc-live, audient, audient-usb, midi-keyboard, midi-controller, generic-midi-controller, generic-usb-audio";
+   return "mpc-sample, mpc-one, mpc-live, audient, audient-usb, midi-keyboard, midi-controller, generic-midi-controller, generic-usb-audio, mixing-desk, digital-mixing-desk, soundcraft-spirit-digital-328";
 }
 
 [[nodiscard]] std::string usage() {
@@ -1037,7 +1038,9 @@ void list_devices(bool probe_access = false) {
     std::cout << "\nAudio endpoints (" << platform::to_string(audio->maturity()) << "): " << audio_endpoints.size() << "\n";
     for (const auto& endpoint : audio_endpoints) {
         std::cout << "  [" << platform::to_string(endpoint.direction) << "] " << endpoint.name
-                  << " id=" << endpoint.id << " state=" << (endpoint.active ? "active" : "inactive") << "\n";
+                  << " id=" << endpoint.id << " state=" << (endpoint.active ? "active" : "inactive")
+                  << " mix-format=" << endpoint.channels << "ch/" << endpoint.sample_rate << "Hz/"
+                  << endpoint.bits_per_sample << "bit\n";
     }
     std::cout << "\nNo interfaces were opened during enumeration. Enumeration does not qualify live MIDI, audio capture, synchronization, storage, or proprietary control.\n";
 }
