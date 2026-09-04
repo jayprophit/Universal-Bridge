@@ -319,6 +319,7 @@ Usage:
   ubridge xpj-import --project <working-copy.xpj> --output <new-folder>
   ubridge midi-monitor --name <endpoint name> [--seconds <1-30>]
   ubridge midi-send-note --name <endpoint name> --note <0-127> --velocity <1-127> [--duration-ms <20-2000>]
+  ubridge midi-send-transport --name <endpoint name> [--bpm <30-300>] [--beats <1-16>]
  
 Example live runtime: MPC Sample -> Windows 11 -> Cubase
  
@@ -1107,6 +1108,33 @@ void send_test_note(std::string_view requested_name, int note, int velocity, int
               << ". Note Off sent; endpoint closed. No SysEx or vendor command was sent.\n";
 }
 
+void send_transport_test(std::string_view requested_name, int bpm, int beats) {
+    auto midi = platform::make_system_midi_backend();
+    const auto endpoints = midi->enumerate_endpoints();
+    const auto found = std::find_if(endpoints.begin(), endpoints.end(), [requested_name](const platform::MidiEndpoint& endpoint) {
+        return endpoint.direction == platform::EndpointDirection::output && lower(endpoint.name) == lower(std::string(requested_name));
+    });
+    if (found == endpoints.end()) throw std::runtime_error("No MIDI output endpoint named '" + std::string(requested_name) + "' is currently available.");
+    if (!midi->open_output(found->id)) throw std::runtime_error("MIDI output '" + found->name + "' is busy or could not be opened.");
+
+    const std::array<std::uint8_t, 1> start{0xfaU};
+    const std::array<std::uint8_t, 1> clock{0xf8U};
+    const std::array<std::uint8_t, 1> stop{0xfcU};
+    const auto pulse_period = std::chrono::duration<double>(60.0 / (static_cast<double>(bpm) * 24.0));
+    bool successful = midi->send(found->id, start);
+    auto deadline = std::chrono::steady_clock::now();
+    for (int pulse = 0; successful && pulse < beats * 24; ++pulse) {
+        deadline += std::chrono::duration_cast<std::chrono::steady_clock::duration>(pulse_period);
+        successful = midi->send(found->id, clock);
+        std::this_thread::sleep_until(deadline);
+    }
+    const bool stopped = midi->send(found->id, stop);
+    midi->close(found->id);
+    if (!successful || !stopped) throw std::runtime_error("The bounded MIDI transport test did not complete; MIDI Stop was attempted and the endpoint was closed.");
+    std::cout << "Sent bounded standard MIDI transport to '" << found->name << "': Start, " << beats * 24
+              << " Clock pulses at " << bpm << " BPM, then Stop. Endpoint closed. No SysEx or vendor command was sent.\n";
+}
+
 } // namespace ubridge
 
 int main(int argc, char* argv[]) {
@@ -1193,6 +1221,21 @@ int main(int argc, char* argv[]) {
                 throw std::runtime_error("midi-send-note requires --name, --note 0-127, --velocity 1-127, and --duration-ms 20-2000.");
             }
             ubridge::send_test_note(name, note, velocity, duration_ms);
+            return 0;
+        }
+        if (argc >= 2 && std::string_view(argv[1]) == "midi-send-transport") {
+            std::string name; int bpm = 120; int beats = 4;
+            for (int index = 2; index < argc; ++index) {
+                const std::string argument = argv[index];
+                if (argument == "--name" && index + 1 < argc) name = argv[++index];
+                else if (argument == "--bpm" && index + 1 < argc) bpm = std::stoi(argv[++index]);
+                else if (argument == "--beats" && index + 1 < argc) beats = std::stoi(argv[++index]);
+                else throw std::runtime_error("Unknown midi-send-transport option: " + argument + "\n\n" + ubridge::usage());
+            }
+            if (name.empty() || bpm < 30 || bpm > 300 || beats < 1 || beats > 16) {
+                throw std::runtime_error("midi-send-transport requires --name, --bpm 30-300, and --beats 1-16.");
+            }
+            ubridge::send_transport_test(name, bpm, beats);
             return 0;
         }
         if (argc >= 2 && std::string_view(argv[1]) == "route") {
