@@ -1,0 +1,34 @@
+{
+  "schema_version": "0.1.0",
+  "observed_at": "2026-09-04",
+  "test": "bounded standard MIDI note output",
+  "authorization": "user replied continue to the explicitly described test",
+  "conditions": {
+    "cubase": "closed",
+    "endpoint": "MPC Sample",
+    "backend": "Windows WinMM MIDI 1.0 fallback"
+  },
+  "messages": [
+    {"semantic": "note_on", "channel": 1, "note": 36, "velocity": 32},
+    {"semantic": "note_off", "channel": 1, "note": 36, "velocity": 0, "delay_after_note_on_ms": 100}
+  ],
+  "software_result": {
+    "endpoint_opened": true,
+    "note_on_accepted": true,
+    "note_off_accepted": true,
+    "endpoint_closed": true,
+    "process_exit_code": 0
+  },
+  "qualification": {
+    "bridge_to_windows_midi_output": "observed",
+    "windows_to_mpc_delivery": "awaiting-user-hardware-observation",
+    "bridge_to_mpc_midi_send": "not-yet-qualified",
+    "bidirectional_midi": "not-yet-qualified"
+  },
+  "safety": {
+    "sysex_sent": false,
+    "vendor_commands_sent": false,
+    "usb_interfaces_opened": false,
+    "project_write_performed": false
+  }
+}
