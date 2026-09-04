@@ -301,7 +301,7 @@ void copy_safely(const fs::path& source, const fs::path& destination) {
 }
 
 [[nodiscard]] std::string supported_daw_list() {
-   return "cubase, reason, ableton-live, garageband, logic-pro, fl-studio, fl-studio-mobile, reaper, studio-one, pro-tools, mobile-generic";
+   return "mpc-beats, cubase, reason, ableton-live, garageband, logic-pro, fl-studio, fl-studio-mobile, reaper, studio-one, pro-tools, mobile-generic";
 }
 
 [[nodiscard]] std::string supported_device_list() {

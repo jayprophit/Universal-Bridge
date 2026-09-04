@@ -90,7 +90,7 @@ std::vector<DeviceProfile> builtin_device_profiles() {
             "akai.mpc-sample", "Akai", "MPC Sample", "B",
             device_capability("akai.mpc-sample", true, true, true, true, 2, false, false, true, false, false),
             false, false,
-            {"read_only_project_intake", "audio_midi_exchange", "external_backup", "assisted_capture"}
+            {"read_only_project_intake", "audio_midi_exchange", "external_backup", "assisted_capture", "official_mpc3_8_plus_project_import"}
         },
         {
             "akai.mpc-one", "Akai", "MPC One", "A",
@@ -169,6 +169,7 @@ std::vector<DeviceProfile> builtin_device_profiles() {
 
 std::vector<DawProfile> builtin_daw_profiles() {
     return {
+        {"mpc-beats", "MPC Beats", daw_capability("mpc-beats", true), {"official_mpc_plugin", "audio_midi_drag_export", "midi_map_exchange", "canonical_branch_bridge_future"}},
         {"cubase", "Cubase", daw_capability("cubase", true), {"audio_midi_exchange", "vst3_client_future"}},
         {"reason", "Reason", daw_capability("reason", true), {"audio_midi_exchange", "vst3_client_future", "rack_extension_feasibility"}},
         {"ableton-live", "Ableton Live", daw_capability("ableton-live", true), {"audio_midi_exchange", "vst3_client_future"}},

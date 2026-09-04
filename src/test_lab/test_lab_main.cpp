@@ -43,6 +43,7 @@ void profile_registry_test() {
     expect(ubridge::modules::find_device_profile("mixing-desk.digital-generic").has_value(), "generic digital mixing desk profile must resolve");
     expect(ubridge::modules::find_device_profile("soundcraft.spirit-digital-328").has_value(), "Soundcraft Spirit Digital 328 profile must resolve");
     expect(ubridge::modules::find_daw_profile("cubase").has_value(), "Cubase profile must resolve");
+    expect(ubridge::modules::find_daw_profile("mpc-beats").has_value(), "MPC Beats official-assisted host profile must resolve");
     expect(ubridge::modules::find_daw_profile("reason").has_value(), "Reason profile must resolve");
     expect(ubridge::modules::find_platform_profile("ipados").has_value(), "iPadOS profile must resolve");
 }
