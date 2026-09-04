@@ -49,13 +49,18 @@ target_link_libraries(ubridge PRIVATE ubridge_core ubridge_modules)
 add_executable(ubridge_test_lab
     src/test_lab/test_lab_main.cpp
 )
+add_executable(ubridge_service
+    src/service/service_main.cpp
+)
+target_link_libraries(ubridge_service PRIVATE ubridge_core ubridge_modules)
+target_include_directories(ubridge_service PRIVATE include)
 target_link_libraries(ubridge_test_lab PRIVATE ubridge_core ubridge_modules)
 target_include_directories(ubridge PRIVATE include)
 target_compile_definitions(ubridge PRIVATE
     UBRIDGE_VERSION="${PROJECT_VERSION}"
 )
 
-foreach(target IN ITEMS ubridge_core ubridge_modules ubridge ubridge_test_lab)
+foreach(target IN ITEMS ubridge_core ubridge_modules ubridge ubridge_test_lab ubridge_service)
     set_target_properties(${target} PROPERTIES
         CXX_EXTENSIONS OFF
         RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin"
@@ -68,8 +73,9 @@ if(MSVC)
     target_compile_options(ubridge_modules PRIVATE /W4 /permissive-)
     target_compile_options(ubridge_test_lab PRIVATE /W4 /permissive-)
     target_compile_options(ubridge PRIVATE /W4 /permissive-)
+    target_compile_options(ubridge_service PRIVATE /W4 /permissive-)
     if(UBRIDGE_WARNINGS_AS_ERRORS)
-        foreach(target IN ITEMS ubridge_core ubridge_modules ubridge_test_lab ubridge)
+        foreach(target IN ITEMS ubridge_core ubridge_modules ubridge_test_lab ubridge ubridge_service)
             target_compile_options(${target} PRIVATE /WX)
         endforeach()
     endif()
@@ -78,8 +84,9 @@ else()
     target_compile_options(ubridge_modules PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
     target_compile_options(ubridge_test_lab PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
     target_compile_options(ubridge PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
+    target_compile_options(ubridge_service PRIVATE -Wall -Wextra -Wpedantic -Wconversion -Wshadow)
     if(UBRIDGE_WARNINGS_AS_ERRORS)
-        foreach(target IN ITEMS ubridge_core ubridge_modules ubridge_test_lab ubridge)
+        foreach(target IN ITEMS ubridge_core ubridge_modules ubridge_test_lab ubridge ubridge_service)
             target_compile_options(${target} PRIVATE -Werror)
         endforeach()
     endif()
@@ -89,6 +96,8 @@ if(BUILD_TESTING AND UBRIDGE_BUILD_TESTS)
 add_test(NAME virtual_hardware_laboratory COMMAND ubridge_test_lab)
 add_test(NAME read_only_device_inventory COMMAND ubridge devices)
 set_tests_properties(read_only_device_inventory PROPERTIES PASS_REGULAR_EXPRESSION "No interfaces were opened")
+add_test(NAME service_diagnostic_startup COMMAND ubridge_service --diagnose-once)
+set_tests_properties(service_diagnostic_startup PROPERTIES PASS_REGULAR_EXPRESSION "Universal Bridge per-user service diagnostic complete")
 
 add_test(
     NAME bridge_demo_preflight
@@ -117,7 +126,7 @@ if(Python3_Interpreter_FOUND)
 endif()
 endif()
 
-install(TARGETS ubridge RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
+install(TARGETS ubridge ubridge_service RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(DIRECTORY profiles/ DESTINATION ${CMAKE_INSTALL_DATADIR}/universal-bridge/profiles)
 install(DIRECTORY docs/ DESTINATION ${CMAKE_INSTALL_DOCDIR})
 
