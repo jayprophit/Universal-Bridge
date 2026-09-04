@@ -27,6 +27,54 @@ struct Pad {
     double pan = 0.0;
 };
 
+struct SampleSlice {
+    std::string id;
+    std::string asset_id;
+    std::uint64_t start_frame = 0;
+    std::uint64_t end_frame = 0;
+    int target_pad_index = -1;
+    std::string name;
+};
+
+struct InstrumentProgram {
+    std::string id;
+    std::string name;
+    std::vector<std::string> pad_ids;
+    std::vector<std::string> slice_ids;
+};
+
+struct Sequence {
+    std::string id;
+    std::string name;
+    std::int64_t length_ticks = 0;
+    std::vector<std::string> track_ids;
+};
+
+struct SongStep {
+    std::string sequence_id;
+    int repetitions = 1;
+};
+
+struct Song {
+    std::string id;
+    std::string name;
+    std::vector<SongStep> steps;
+};
+
+enum class TransferDirection { hardware_to_daw, daw_to_hardware };
+
+struct PadAssignmentIntent {
+    std::string id;
+    TransferDirection direction = TransferDirection::daw_to_hardware;
+    std::string branch_id;
+    std::string program_id;
+    int pad_index = -1;
+    core::AssetReference asset;
+    bool backup_verified = false;
+    bool target_format_qualified = false;
+    bool ready_to_apply = false;
+};
+
 struct Track {
     std::string id;
     std::string name;
@@ -98,6 +146,10 @@ struct FullSession {
     int time_signature_denominator = 4;
     std::vector<Track> tracks;
     std::vector<Pad> pads;
+    std::vector<SampleSlice> slices;
+    std::vector<InstrumentProgram> programs;
+    std::vector<Sequence> sequences;
+    std::vector<Song> songs;
     std::vector<Clip> clips;
     std::vector<ArrangementRegion> arrangement;
     std::vector<MixerChannel> mixer;
@@ -192,5 +244,15 @@ struct PortableArchivePlan {
     SessionBranch daw);
 [[nodiscard]] bool resolve_conflict(SessionMergePlan& plan, MergeResolution resolution);
 [[nodiscard]] bool extract_section(SessionMergePlan& plan, SectionExtraction extraction);
+[[nodiscard]] std::string to_string(TransferDirection direction);
+[[nodiscard]] PadAssignmentIntent plan_pad_assignment(
+    std::string id,
+    TransferDirection direction,
+    std::string branch_id,
+    std::string program_id,
+    int pad_index,
+    core::AssetReference asset,
+    bool backup_verified,
+    bool target_format_qualified);
 
 } // namespace ubridge::session

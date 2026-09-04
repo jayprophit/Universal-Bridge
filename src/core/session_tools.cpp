@@ -54,6 +54,10 @@ std::vector<core::Diagnostic> validate(const FullSession& session) {
 
     report_duplicate_ids(session.tracks, "track", diagnostics);
     report_duplicate_ids(session.pads, "pad", diagnostics);
+    report_duplicate_ids(session.slices, "slice", diagnostics);
+    report_duplicate_ids(session.programs, "program", diagnostics);
+    report_duplicate_ids(session.sequences, "sequence", diagnostics);
+    report_duplicate_ids(session.songs, "song", diagnostics);
     report_duplicate_ids(session.clips, "clip", diagnostics);
     report_duplicate_ids(session.arrangement, "arrangement_region", diagnostics);
     report_duplicate_ids(session.mixer, "mixer_channel", diagnostics);
@@ -80,6 +84,21 @@ std::vector<core::Diagnostic> validate(const FullSession& session) {
         } else if (!pad_indices.insert(pad.index).second) {
             diagnostics.push_back({core::DiagnosticSeverity::warning, "duplicate_pad_index", "More than one pad uses index " + std::to_string(pad.index) + ".", "Resolve the pad-map ambiguity before controller routing."});
         }
+    }
+    std::set<std::string> sequence_ids;
+    for (const auto& sequence : session.sequences) {
+        sequence_ids.insert(sequence.id);
+        if (sequence.length_ticks <= 0) diagnostics.push_back({core::DiagnosticSeverity::warning, "nonpositive_sequence_length", "Sequence '" + sequence.id + "' has no positive duration.", "Preserve it as metadata but do not schedule it until its length is known."});
+    }
+    for (const auto& song : session.songs) {
+        for (const auto& step : song.steps) {
+            if (!sequence_ids.contains(step.sequence_id)) diagnostics.push_back({core::DiagnosticSeverity::error, "song_missing_sequence", "Song '" + song.id + "' refers to missing sequence '" + step.sequence_id + "'.", "Import or relink the sequence before reconstructing the song."});
+            if (step.repetitions <= 0) diagnostics.push_back({core::DiagnosticSeverity::error, "invalid_song_repetitions", "Song '" + song.id + "' has a nonpositive repetition count.", "Set a positive count before DAW arrangement creation."});
+        }
+    }
+    for (const auto& slice : session.slices) {
+        if (slice.end_frame <= slice.start_frame) diagnostics.push_back({core::DiagnosticSeverity::error, "invalid_sample_slice", "Slice '" + slice.id + "' has an invalid frame range.", "Keep the source audio unchanged and repair the non-destructive slice markers."});
+        if (slice.target_pad_index < 0) diagnostics.push_back({core::DiagnosticSeverity::warning, "slice_without_pad", "Slice '" + slice.id + "' is not assigned to a pad.", "Retain it as an unassigned chop until the user maps it."});
     }
 
     for (const auto& edge : session.routing) {
@@ -268,6 +287,34 @@ bool extract_section(SessionMergePlan& plan, SectionExtraction extraction) {
     if (!valid_source) return false;
     plan.extractions.push_back(std::move(extraction));
     return true;
+}
+
+std::string to_string(TransferDirection direction) {
+    return direction == TransferDirection::hardware_to_daw ? "hardware_to_daw" : "daw_to_hardware";
+}
+
+PadAssignmentIntent plan_pad_assignment(
+    std::string id,
+    TransferDirection direction,
+    std::string branch_id,
+    std::string program_id,
+    int pad_index,
+    core::AssetReference asset,
+    bool backup_verified,
+    bool target_format_qualified) {
+    PadAssignmentIntent intent;
+    intent.id = std::move(id);
+    intent.direction = direction;
+    intent.branch_id = std::move(branch_id);
+    intent.program_id = std::move(program_id);
+    intent.pad_index = pad_index;
+    intent.asset = std::move(asset);
+    intent.backup_verified = backup_verified;
+    intent.target_format_qualified = target_format_qualified;
+    intent.ready_to_apply = !intent.id.empty() && !intent.branch_id.empty() && !intent.program_id.empty() &&
+                            intent.pad_index >= 0 && !intent.asset.fingerprint.empty() &&
+                            backup_verified && target_format_qualified;
+    return intent;
 }
 
 } // namespace ubridge::session

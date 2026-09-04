@@ -271,6 +271,21 @@ void session_branch_and_merge_test() {
     expect(merge.extractions.size() == 1, "section extraction must remain auditable");
 }
 
+void pad_slice_sequence_song_test() {
+    using namespace ubridge;
+    auto session = complete_session_fixture(false);
+    session.slices = {{"slice-1", "asset-kick", 100, 1000, 0, "Kick chop"}};
+    session.programs = {{"program-a", "Drum Program", {"pad-kick", "pad-snare"}, {"slice-1"}}};
+    session.sequences = {{"sequence-intro", "Intro", 3840, {"track-drums"}}};
+    session.songs = {{"song-1", "Song", {{"sequence-intro", 2}}}};
+    expect(session::validate(session).empty(), "valid pads, chops, instrument program, sequence, and song must share the canonical session");
+    const core::AssetReference dropped{"asset-drop", "daw/drop.wav", "sha256:drop", 1234, true};
+    const auto gated = session::plan_pad_assignment("drop-1", session::TransferDirection::daw_to_hardware, "daw/revision-4", "program-a", 3, dropped, false, false);
+    expect(!gated.ready_to_apply, "DAW drag/drop must not write an MPC pad before backup and target format qualification");
+    const auto ready = session::plan_pad_assignment("drop-2", session::TransferDirection::hardware_to_daw, "mpc/revision-4", "program-a", 3, dropped, true, true);
+    expect(ready.ready_to_apply, "qualified backed-up pad assignment may become ready for an adapter transaction");
+}
+
 void performance_and_routing_test() {
     using namespace ubridge;
     const auto timing = performance::measure_timing("fixture-loopback", 48000.0, 0, 576, 480);
@@ -353,6 +368,7 @@ int main() {
     local_service_test();
     session_asset_and_archive_test();
     session_branch_and_merge_test();
+    pad_slice_sequence_song_test();
     performance_and_routing_test();
     reporting_and_profile_test();
     virtual_device_test();
