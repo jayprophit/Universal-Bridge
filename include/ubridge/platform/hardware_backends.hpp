@@ -117,6 +117,7 @@ public:
 [[nodiscard]] std::unique_ptr<IAudioBackend> make_system_audio_backend();
 [[nodiscard]] std::string to_string(BackendMaturity maturity);
 [[nodiscard]] std::string to_string(EndpointDirection direction);
+[[nodiscard]] std::string midi_message_semantic(std::span<const std::uint8_t> message);
 [[nodiscard]] EndpointMatch resolve_midi_endpoint(const std::vector<MidiEndpoint>& endpoints, const EndpointMatchRule& rule);
 [[nodiscard]] EndpointMatch resolve_audio_endpoint(const std::vector<AudioEndpoint>& endpoints, const EndpointMatchRule& rule);
 [[nodiscard]] std::vector<core::ProtocolEvidence> protocol_evidence_for(const DiscoveredDevice& device);

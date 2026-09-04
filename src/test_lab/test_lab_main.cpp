@@ -408,6 +408,11 @@ void virtual_device_test() {
 } // namespace
 
 int main() {
+    expect(ubridge::platform::midi_message_semantic(std::vector<std::uint8_t>{0xfaU}) == "transport_start", "MIDI Start must be decoded as transport_start");
+    expect(ubridge::platform::midi_message_semantic(std::vector<std::uint8_t>{0xfbU}) == "transport_continue", "MIDI Continue must be decoded as transport_continue");
+    expect(ubridge::platform::midi_message_semantic(std::vector<std::uint8_t>{0xfcU}) == "transport_stop", "MIDI Stop must be decoded as transport_stop");
+    expect(ubridge::platform::midi_message_semantic(std::vector<std::uint8_t>{0xf8U}) == "timing_clock", "MIDI Clock must be decoded as timing_clock");
+    expect(ubridge::platform::midi_message_semantic(std::vector<std::uint8_t>{0xf2U, 0x00U, 0x00U}) == "song_position_pointer", "MIDI Song Position must be decoded");
     xpj_reader_test();
     profile_registry_test();
     negotiation_and_workflow_test();

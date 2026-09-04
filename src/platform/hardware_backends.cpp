@@ -268,6 +268,37 @@ std::unique_ptr<IAudioBackend> make_system_audio_backend() {
 }
 std::string to_string(BackendMaturity v) { switch (v) { case BackendMaturity::unavailable: return "unavailable"; case BackendMaturity::scaffold: return "scaffold"; case BackendMaturity::experimental: return "experimental"; case BackendMaturity::qualified: return "qualified"; } return "unavailable"; }
 std::string to_string(EndpointDirection v) { return v == EndpointDirection::input ? "input" : "output"; }
+std::string midi_message_semantic(std::span<const std::uint8_t> message) {
+    if (message.empty()) return "empty";
+    const auto status = message[0];
+    if (status >= 0xf0U) {
+        switch (status) {
+        case 0xf0U: return "system_exclusive";
+        case 0xf1U: return "midi_time_code_quarter_frame";
+        case 0xf2U: return "song_position_pointer";
+        case 0xf3U: return "song_select";
+        case 0xf6U: return "tune_request";
+        case 0xf7U: return "system_exclusive_end";
+        case 0xf8U: return "timing_clock";
+        case 0xfaU: return "transport_start";
+        case 0xfbU: return "transport_continue";
+        case 0xfcU: return "transport_stop";
+        case 0xfeU: return "active_sensing";
+        case 0xffU: return "system_reset";
+        default: return "system_undefined";
+        }
+    }
+    switch (static_cast<std::uint8_t>(status & 0xf0U)) {
+    case 0x80U: return "note_off";
+    case 0x90U: return message.size() > 2 && message[2] == 0 ? "note_off" : "note_on";
+    case 0xa0U: return "poly_key_pressure";
+    case 0xb0U: return "control_change";
+    case 0xc0U: return "program_change";
+    case 0xd0U: return "channel_pressure";
+    case 0xe0U: return "pitch_bend";
+    default: return "unknown";
+    }
+}
 EndpointMatch resolve_midi_endpoint(const std::vector<MidiEndpoint>& endpoints, const EndpointMatchRule& rule) {
     EndpointMatch result; int best = std::numeric_limits<int>::lowest();
     for (const auto& endpoint : endpoints) {

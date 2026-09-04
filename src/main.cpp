@@ -1075,17 +1075,7 @@ void monitor_midi(std::string_view requested_name, int seconds) {
     std::atomic<std::uint64_t> count{0};
     const bool opened = midi->open_input(found->id, [&count](const platform::MidiMessage& message) {
         ++count;
-        std::string semantic = "system_or_unknown";
-        if (!message.bytes.empty()) {
-            const auto family = static_cast<std::uint8_t>(message.bytes[0] & 0xf0U);
-            if (family == 0x80U) semantic = "note_off";
-            else if (family == 0x90U) semantic = message.bytes.size() > 2 && message.bytes[2] == 0 ? "note_off" : "note_on";
-            else if (family == 0xa0U) semantic = "poly_key_pressure";
-            else if (family == 0xb0U) semantic = "control_change";
-            else if (family == 0xc0U) semantic = "program_change";
-            else if (family == 0xd0U) semantic = "channel_pressure";
-            else if (family == 0xe0U) semantic = "pitch_bend";
-        }
+        const auto semantic = platform::midi_message_semantic(message.bytes);
         std::cout << "MIDI timestamp_us=" << message.timestamp_microseconds << " semantic=" << semantic << " bytes=";
         for (const auto byte : message.bytes) std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<unsigned int>(byte) << ' ';
         std::cout << std::dec << "\n";
