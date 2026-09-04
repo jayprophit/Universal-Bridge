@@ -187,4 +187,87 @@ PortableArchivePlan plan_archive(const FullSession& session, std::string archive
     return plan;
 }
 
+std::string to_string(BranchOrigin origin) {
+    switch (origin) {
+        case BranchOrigin::hardware: return "hardware";
+        case BranchOrigin::daw: return "daw";
+        case BranchOrigin::bridge: return "bridge";
+    }
+    return "bridge";
+}
+
+std::string to_string(MergeChoice choice) {
+    switch (choice) {
+        case MergeChoice::keep_hardware: return "keep_hardware";
+        case MergeChoice::keep_daw: return "keep_daw";
+        case MergeChoice::merge_value: return "merge_value";
+        case MergeChoice::extract_section: return "extract_section";
+    }
+    return "merge_value";
+}
+
+SessionBranch create_branch(
+    std::string id,
+    BranchOrigin origin,
+    core::RevisionVector base_revision,
+    std::vector<core::Change> changes) {
+    SessionBranch branch;
+    branch.id = std::move(id);
+    branch.origin = origin;
+    branch.base_revision = base_revision;
+    branch.head_revision = base_revision;
+    branch.changes = std::move(changes);
+    ++branch.head_revision.session;
+    if (origin == BranchOrigin::hardware) ++branch.head_revision.hardware;
+    if (origin == BranchOrigin::daw) ++branch.head_revision.daw;
+    return branch;
+}
+
+SessionMergePlan plan_merge(
+    std::string base_session_id,
+    SessionBranch hardware,
+    SessionBranch daw) {
+    SessionMergePlan plan;
+    plan.base_session_id = std::move(base_session_id);
+    plan.hardware = std::move(hardware);
+    plan.daw = std::move(daw);
+    plan.conflicts = core::detect_conflicts(plan.hardware.changes, plan.daw.changes);
+    const auto conflicts_with = [&plan](const core::Change& change) {
+        return std::any_of(plan.conflicts.begin(), plan.conflicts.end(), [&change](const core::Conflict& conflict) {
+            return conflict.hardware_change.entity_id == change.entity_id && conflict.hardware_change.field == change.field;
+        });
+    };
+    for (const auto& change : plan.hardware.changes) if (!conflicts_with(change)) plan.automatic_changes.push_back(change);
+    for (const auto& change : plan.daw.changes) {
+        if (conflicts_with(change)) continue;
+        const bool duplicate = std::any_of(plan.automatic_changes.begin(), plan.automatic_changes.end(), [&change](const core::Change& existing) {
+            return existing.entity_id == change.entity_id && existing.field == change.field && existing.after == change.after;
+        });
+        if (!duplicate) plan.automatic_changes.push_back(change);
+    }
+    plan.ready_to_apply = plan.conflicts.empty();
+    return plan;
+}
+
+bool resolve_conflict(SessionMergePlan& plan, MergeResolution resolution) {
+    const auto conflict = std::find_if(plan.conflicts.begin(), plan.conflicts.end(), [&resolution](const core::Conflict& value) {
+        return value.hardware_change.entity_id == resolution.entity_id && value.hardware_change.field == resolution.field;
+    });
+    if (conflict == plan.conflicts.end()) return false;
+    if (resolution.choice == MergeChoice::keep_hardware) resolution.resolved_value = conflict->hardware_change.after;
+    if (resolution.choice == MergeChoice::keep_daw) resolution.resolved_value = conflict->daw_change.after;
+    if (resolution.resolved_value.empty()) return false;
+    plan.resolutions.push_back(std::move(resolution));
+    plan.ready_to_apply = plan.resolutions.size() == plan.conflicts.size();
+    return true;
+}
+
+bool extract_section(SessionMergePlan& plan, SectionExtraction extraction) {
+    if (extraction.destination_branch_id.empty() || extraction.entity_ids.empty()) return false;
+    const bool valid_source = extraction.source_branch_id == plan.hardware.id || extraction.source_branch_id == plan.daw.id;
+    if (!valid_source) return false;
+    plan.extractions.push_back(std::move(extraction));
+    return true;
+}
+
 } // namespace ubridge::session

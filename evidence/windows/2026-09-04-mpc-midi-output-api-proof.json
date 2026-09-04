@@ -21,9 +21,14 @@
   },
   "qualification": {
     "bridge_to_windows_midi_output": "observed",
-    "windows_to_mpc_delivery": "awaiting-user-hardware-observation",
-    "bridge_to_mpc_midi_send": "not-yet-qualified",
-    "bidirectional_midi": "not-yet-qualified"
+    "windows_to_mpc_delivery": "qualified-by-user-observed-audible-response",
+    "bridge_to_mpc_midi_send": "qualified-on-this-device-os-connection",
+    "bidirectional_midi": "qualified-at-hardware-transport-level; DAW and session synchronization remain unimplemented"
+  },
+  "hardware_observation": {
+    "reported_by_user": true,
+    "result": "MPC made a sound through the sound card",
+    "meaning": "The bounded note reached the MPC and its audio return was audible."
   },
   "safety": {
     "sysex_sent": false,

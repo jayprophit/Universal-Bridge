@@ -106,6 +106,42 @@ struct FullSession {
     std::vector<RoutingEdge> routing;
 };
 
+enum class BranchOrigin { hardware, daw, bridge };
+enum class MergeChoice { keep_hardware, keep_daw, merge_value, extract_section };
+
+struct SessionBranch {
+    std::string id;
+    BranchOrigin origin = BranchOrigin::bridge;
+    core::RevisionVector base_revision;
+    core::RevisionVector head_revision;
+    std::vector<core::Change> changes;
+    bool immutable_source_snapshot = true;
+};
+
+struct SectionExtraction {
+    std::string source_branch_id;
+    std::vector<std::string> entity_ids;
+    std::string destination_branch_id;
+};
+
+struct MergeResolution {
+    std::string entity_id;
+    std::string field;
+    MergeChoice choice = MergeChoice::merge_value;
+    std::string resolved_value;
+};
+
+struct SessionMergePlan {
+    std::string base_session_id;
+    SessionBranch hardware;
+    SessionBranch daw;
+    std::vector<core::Change> automatic_changes;
+    std::vector<core::Conflict> conflicts;
+    std::vector<MergeResolution> resolutions;
+    std::vector<SectionExtraction> extractions;
+    bool ready_to_apply = false;
+};
+
 struct DuplicateAssetGroup {
     std::string fingerprint;
     std::vector<std::string> asset_ids;
@@ -143,5 +179,18 @@ struct PortableArchivePlan {
 [[nodiscard]] std::vector<core::Diagnostic> validate(const FullSession& session);
 [[nodiscard]] AssetHealthReport analyze_assets(const FullSession& session);
 [[nodiscard]] PortableArchivePlan plan_archive(const FullSession& session, std::string archive_id);
+[[nodiscard]] std::string to_string(BranchOrigin origin);
+[[nodiscard]] std::string to_string(MergeChoice choice);
+[[nodiscard]] SessionBranch create_branch(
+    std::string id,
+    BranchOrigin origin,
+    core::RevisionVector base_revision,
+    std::vector<core::Change> changes);
+[[nodiscard]] SessionMergePlan plan_merge(
+    std::string base_session_id,
+    SessionBranch hardware,
+    SessionBranch daw);
+[[nodiscard]] bool resolve_conflict(SessionMergePlan& plan, MergeResolution resolution);
+[[nodiscard]] bool extract_section(SessionMergePlan& plan, SectionExtraction extraction);
 
 } // namespace ubridge::session

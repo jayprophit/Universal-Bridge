@@ -250,6 +250,27 @@ void session_asset_and_archive_test() {
     expect(archive.entries.size() == 3, "archive manifest must retain all assets");
 }
 
+void session_branch_and_merge_test() {
+    using namespace ubridge;
+    const core::RevisionVector base{4, 2, 2};
+    auto hardware = session::create_branch("mpc/revision-3", session::BranchOrigin::hardware, base, {
+        {"sequence-1", "name", "Verse", "Verse MPC", core::SyncPolicy::bidirectional},
+        {"pad-1", "sample", "kick-a", "kick-b", core::SyncPolicy::bidirectional}
+    });
+    auto daw = session::create_branch("daw/revision-3", session::BranchOrigin::daw, base, {
+        {"sequence-1", "name", "Verse", "Verse DAW", core::SyncPolicy::bidirectional},
+        {"mixer-1", "volume", "-3", "-2", core::SyncPolicy::bidirectional}
+    });
+    auto merge = session::plan_merge("session-1", hardware, daw);
+    expect(merge.conflicts.size() == 1, "same field edited differently must remain a branch conflict");
+    expect(merge.automatic_changes.size() == 2, "independent branch changes must merge automatically");
+    expect(!merge.ready_to_apply, "unresolved conflict must block merge application");
+    expect(session::resolve_conflict(merge, {"sequence-1", "name", session::MergeChoice::keep_hardware, {}}), "hardware version must be selectable singularly");
+    expect(merge.ready_to_apply, "resolved merge must become ready without overwriting either source branch");
+    expect(session::extract_section(merge, {"mpc/revision-3", {"pad-1"}, "abstract/kick-change"}), "selected entities must be extractable into a new branch");
+    expect(merge.extractions.size() == 1, "section extraction must remain auditable");
+}
+
 void performance_and_routing_test() {
     using namespace ubridge;
     const auto timing = performance::measure_timing("fixture-loopback", 48000.0, 0, 576, 480);
@@ -331,6 +352,7 @@ int main() {
     sync_and_backend_contract_test();
     local_service_test();
     session_asset_and_archive_test();
+    session_branch_and_merge_test();
     performance_and_routing_test();
     reporting_and_profile_test();
     virtual_device_test();
