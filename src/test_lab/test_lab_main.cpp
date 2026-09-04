@@ -181,6 +181,25 @@ void sync_and_backend_contract_test() {
     expect(platform::make_system_midi_backend() != nullptr, "platform MIDI factory must always return an implementation");
     expect(platform::make_system_audio_backend() != nullptr, "platform audio factory must always return an implementation");
     expect(platform::to_string(platform::EndpointDirection::input) == "input", "endpoint direction must be reportable");
+
+    const std::vector<platform::MidiEndpoint> portable_midi = {
+        {"machine-a:7", "Acme Drum Workstation", "Acme", platform::EndpointDirection::input, "ALSA", "MIDI 1.0", true},
+        {"machine-b:2", "Studio Keys", "Example", platform::EndpointDirection::input, "CoreMIDI", "MIDI 2.0", true}
+    };
+    const auto drum_input = platform::resolve_midi_endpoint(portable_midi, {platform::EndpointDirection::input, {"drum"}, {}, {}, 0});
+    expect(drum_input.endpoint_id == "machine-a:7" && !drum_input.ambiguous, "portable MIDI roles must resolve without a saved Windows endpoint ID");
+
+    const std::vector<platform::AudioEndpoint> portable_audio = {
+        {"wasapi-id", "Interface ADAT 1-8", platform::EndpointDirection::input, true, 48000, 8, 32},
+        {"coreaudio-id", "Built-in Microphone", platform::EndpointDirection::input, true, 48000, 2, 32}
+    };
+    const auto optical_capture = platform::resolve_audio_endpoint(portable_audio, {platform::EndpointDirection::input, {"adat", "optical"}, {}, {}, 8});
+    expect(optical_capture.endpoint_id == "wasapi-id", "portable optical roles must use capabilities and hints instead of an Audient-specific ID");
+    const auto ambiguous = platform::resolve_audio_endpoint({
+        {"one", "Input", platform::EndpointDirection::input, true, 44100, 2, 32},
+        {"two", "Input", platform::EndpointDirection::input, true, 44100, 2, 32}},
+        {platform::EndpointDirection::input, {}, {}, {}, 2});
+    expect(ambiguous.ambiguous, "equally suitable devices must require user selection instead of silently choosing hardware");
 }
 
 void local_service_test() {

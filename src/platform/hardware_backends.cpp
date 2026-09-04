@@ -20,9 +20,27 @@
 #include <map>
 #include <optional>
 #include <unordered_map>
+#include <limits>
 
 namespace ubridge::platform {
 namespace {
+std::string normalized(std::string value) {
+    std::transform(value.begin(), value.end(), value.begin(), [](unsigned char c) {
+        return std::isalnum(c) ? static_cast<char>(std::tolower(c)) : ' ';
+    });
+    value.erase(std::unique(value.begin(), value.end(), [](char a, char b) { return a == ' ' && b == ' '; }), value.end());
+    return value;
+}
+
+int text_score(const std::string& candidate, const std::vector<std::string>& hints) {
+    const auto haystack = normalized(candidate);
+    int score = 0;
+    for (const auto& hint : hints) {
+        const auto needle = normalized(hint);
+        if (!needle.empty() && haystack.find(needle) != std::string::npos) score += 20;
+    }
+    return score;
+}
 #ifdef _WIN32
 std::string utf8(const std::wstring& v) {
     if (v.empty()) return {};
@@ -250,6 +268,33 @@ std::unique_ptr<IAudioBackend> make_system_audio_backend() {
 }
 std::string to_string(BackendMaturity v) { switch (v) { case BackendMaturity::unavailable: return "unavailable"; case BackendMaturity::scaffold: return "scaffold"; case BackendMaturity::experimental: return "experimental"; case BackendMaturity::qualified: return "qualified"; } return "unavailable"; }
 std::string to_string(EndpointDirection v) { return v == EndpointDirection::input ? "input" : "output"; }
+EndpointMatch resolve_midi_endpoint(const std::vector<MidiEndpoint>& endpoints, const EndpointMatchRule& rule) {
+    EndpointMatch result; int best = std::numeric_limits<int>::lowest();
+    for (const auto& endpoint : endpoints) {
+        if (!endpoint.available || endpoint.direction != rule.direction) continue;
+        int score = 10 + text_score(endpoint.name + " " + endpoint.manufacturer, rule.name_hints);
+        if (!rule.backend_hint.empty() && normalized(endpoint.backend).find(normalized(rule.backend_hint)) != std::string::npos) score += 5;
+        if (!rule.protocol_hint.empty() && normalized(endpoint.protocol).find(normalized(rule.protocol_hint)) != std::string::npos) score += 5;
+        if (score > best) { best = score; result = {endpoint.id, endpoint.name, score, false, "Resolved from portable MIDI role criteria at runtime."}; }
+        else if (score == best) result.ambiguous = true;
+    }
+    if (best == std::numeric_limits<int>::lowest()) result.explanation = "No available MIDI endpoint satisfies the required direction.";
+    else if (result.ambiguous) result.explanation = "More than one MIDI endpoint has the same best score; user selection is required before opening either endpoint.";
+    return result;
+}
+
+EndpointMatch resolve_audio_endpoint(const std::vector<AudioEndpoint>& endpoints, const EndpointMatchRule& rule) {
+    EndpointMatch result; int best = std::numeric_limits<int>::lowest();
+    for (const auto& endpoint : endpoints) {
+        if (!endpoint.active || endpoint.direction != rule.direction || endpoint.channels < rule.minimum_channels) continue;
+        const int score = 10 + text_score(endpoint.name, rule.name_hints) + (endpoint.channels == rule.minimum_channels && rule.minimum_channels > 0 ? 3 : 0);
+        if (score > best) { best = score; result = {endpoint.id, endpoint.name, score, false, "Resolved from portable audio role criteria at runtime."}; }
+        else if (score == best) result.ambiguous = true;
+    }
+    if (best == std::numeric_limits<int>::lowest()) result.explanation = "No active audio endpoint satisfies the required direction and channel capacity.";
+    else if (result.ambiguous) result.explanation = "More than one audio endpoint has the same best score; user selection is required before capture.";
+    return result;
+}
 std::vector<core::ProtocolEvidence> protocol_evidence_for(const DiscoveredDevice& device) {
     std::vector<core::ProtocolEvidence> r;
     for (const auto& item : device.interfaces) { std::string service = item.service; std::transform(service.begin(), service.end(), service.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); }); core::ProtocolEvidence e; e.level = core::EvidenceLevel::observed; e.endpoint_id = item.instance_id;

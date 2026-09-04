@@ -47,6 +47,24 @@ struct AudioSignalProbe {
     std::string status;
 };
 
+// Persist portable intent, not an operating-system endpoint ID. Runtime IDs are
+// deliberately resolved again whenever hardware is attached or the OS changes.
+struct EndpointMatchRule {
+    EndpointDirection direction = EndpointDirection::input;
+    std::vector<std::string> name_hints;
+    std::string backend_hint;
+    std::string protocol_hint;
+    std::uint16_t minimum_channels = 0;
+};
+
+struct EndpointMatch {
+    std::string endpoint_id;
+    std::string endpoint_name;
+    int score = 0;
+    bool ambiguous = false;
+    std::string explanation;
+};
+
 struct UsbInterface {
     std::string instance_id;
     std::string container_id;
@@ -99,6 +117,8 @@ public:
 [[nodiscard]] std::unique_ptr<IAudioBackend> make_system_audio_backend();
 [[nodiscard]] std::string to_string(BackendMaturity maturity);
 [[nodiscard]] std::string to_string(EndpointDirection direction);
+[[nodiscard]] EndpointMatch resolve_midi_endpoint(const std::vector<MidiEndpoint>& endpoints, const EndpointMatchRule& rule);
+[[nodiscard]] EndpointMatch resolve_audio_endpoint(const std::vector<AudioEndpoint>& endpoints, const EndpointMatchRule& rule);
 [[nodiscard]] std::vector<core::ProtocolEvidence> protocol_evidence_for(const DiscoveredDevice& device);
 
 inline constexpr std::uint16_t mpc_sample_vendor_id = 0x09E8;
