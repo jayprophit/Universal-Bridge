@@ -22,7 +22,9 @@
     "audient_windows_endpoints": "observed",
     "optical_format": "observed-adat-aux-optical-route",
     "aux_output_assignment": "unavailable-until-desk-menu-is-inspected",
-    "live_audio": "observed-at-audient-endpoints; source-channel-association-awaits-controlled-signal-test",
+    "live_audio": "qualified-receive-only-on-tested-windows-configuration",
+    "qualified_windows_endpoint": "Input 9/10 (Audient iD14)",
+    "qualification_basis": "controlled quiet-versus-active signal comparison",
     "mixer_control": "unavailable"
   },
   "safe_operations": [
