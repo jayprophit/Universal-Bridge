@@ -2,6 +2,7 @@
 #include "ubridge/platform/hardware_backends.hpp"
 
 #include <algorithm>
+#include <atomic>
 #include <chrono>
 #include <cctype>
 #include <cstdint>
@@ -17,6 +18,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <thread>
 #include <vector>
 
 namespace fs = std::filesystem;
@@ -311,6 +313,7 @@ Usage:
   ubridge preflight --project <folder> --daw <cubase|reason|ableton-live|fl-studio|garageband|logic-pro|reaper|studio-one|pro-tools|mobile-generic> --output <folder> [options]
   ubridge route --device <mpc-sample|mpc-one|mpc-live|audient|audient-usb|midi-keyboard|midi-controller|generic-midi-controller|generic-usb-audio> --daw <cubase|reason|ableton-live|fl-studio|garageband|logic-pro|reaper|studio-one|pro-tools|mobile-generic>
   ubridge devices
+  ubridge midi-monitor --name <endpoint name> [--seconds <1-30>]
  
 Example live runtime: MPC Sample -> Windows 11 -> Cubase
  
@@ -1057,6 +1060,27 @@ void list_devices(bool probe_access = false, bool probe_audio = false) {
     std::cout << "\nNo interfaces were opened during enumeration. Enumeration does not qualify live MIDI, audio capture, synchronization, storage, or proprietary control.\n";
 }
 
+void monitor_midi(std::string_view requested_name, int seconds) {
+    auto midi = platform::make_system_midi_backend();
+    const auto endpoints = midi->enumerate_endpoints();
+    const auto found = std::find_if(endpoints.begin(), endpoints.end(), [requested_name](const platform::MidiEndpoint& endpoint) {
+        return endpoint.direction == platform::EndpointDirection::input && lower(endpoint.name) == lower(std::string(requested_name));
+    });
+    if (found == endpoints.end()) throw std::runtime_error("No MIDI input endpoint named '" + std::string(requested_name) + "' is currently available.");
+    std::atomic<std::uint64_t> count{0};
+    const bool opened = midi->open_input(found->id, [&count](const platform::MidiMessage& message) {
+        ++count;
+        std::cout << "MIDI timestamp_us=" << message.timestamp_microseconds << " bytes=";
+        for (const auto byte : message.bytes) std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<unsigned int>(byte) << ' ';
+        std::cout << std::dec << "\n";
+    });
+    if (!opened) throw std::runtime_error("MIDI input '" + found->name + "' is busy or could not be opened.");
+    std::cout << "Monitoring receive-only MIDI input '" << found->name << "' for " << seconds << " seconds. No MIDI will be sent.\n";
+    std::this_thread::sleep_for(std::chrono::seconds(seconds));
+    midi->close(found->id);
+    std::cout << "MIDI monitor complete. Messages received: " << count.load() << ". Endpoint closed.\n";
+}
+
 } // namespace ubridge
 
 int main(int argc, char* argv[]) {
@@ -1075,6 +1099,18 @@ int main(int argc, char* argv[]) {
                 }
                 return 0;
             }
+        }
+        if (argc >= 2 && std::string_view(argv[1]) == "midi-monitor") {
+            std::string name; int seconds = 10;
+            for (int index = 2; index < argc; ++index) {
+                const std::string argument = argv[index];
+                if (argument == "--name" && index + 1 < argc) name = argv[++index];
+                else if (argument == "--seconds" && index + 1 < argc) seconds = std::stoi(argv[++index]);
+                else throw std::runtime_error("Unknown midi-monitor option: " + argument + "\n\n" + ubridge::usage());
+            }
+            if (name.empty() || seconds < 1 || seconds > 30) throw std::runtime_error("midi-monitor requires --name and --seconds between 1 and 30.");
+            ubridge::monitor_midi(name, seconds);
+            return 0;
         }
         if (argc >= 2 && std::string_view(argv[1]) == "route") {
             std::string device = "mpc-sample";

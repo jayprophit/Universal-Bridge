@@ -1,0 +1,32 @@
+{
+  "schema_version": "0.1.0",
+  "observed_at": "2026-09-04",
+  "conditions": {
+    "cubase": "closed",
+    "soundcraft": "user-confirmed-quiet",
+    "audio_retained": false,
+    "midi_sent": false
+  },
+  "midi_open_close_probe": [
+    {"endpoint": "E-MU Xboard25", "direction": "input", "result": "opened"},
+    {"endpoint": "MPC Sample", "direction": "input", "result": "opened"},
+    {"endpoint": "Microsoft GS Wavetable Synth", "direction": "output", "result": "opened"},
+    {"endpoint": "E-MU Xboard25", "direction": "output", "result": "opened"},
+    {"endpoint": "MPC Sample", "direction": "output", "result": "opened"}
+  ],
+  "quiet_audio_baseline": [
+    {"endpoint": "Input 1/2 (Audient iD14)", "frames": 17640, "peak": 0.0000189543},
+    {"endpoint": "Input 3/4 (Audient iD14)", "frames": 17199, "peak": 0.000023365},
+    {"endpoint": "Input 5/6 (Audient iD14)", "frames": 17640, "peak": 0.0},
+    {"endpoint": "Input 7/8 (Audient iD14)", "frames": 17199, "peak": 0.0},
+    {"endpoint": "Input 9/10 (Audient iD14)", "frames": 16758, "peak": 0.00366211}
+  ],
+  "comparison": {
+    "endpoint": "Input 9/10 (Audient iD14)",
+    "earlier_active_peak": 0.470396,
+    "quiet_peak": 0.00366211,
+    "amplitude_ratio": 128.45,
+    "approximate_reduction_db": 42.17,
+    "conclusion": "strong association with the user-confirmed Soundcraft optical route; controlled active signal repetition still required for qualification"
+  }
+}
