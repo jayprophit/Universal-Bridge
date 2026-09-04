@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ubridge/core/bridge_core.hpp"
+#include "ubridge/core/session_tools.hpp"
 
 #include <cstddef>
 #include <filesystem>
@@ -26,8 +27,18 @@ struct XpjInspection {
     std::vector<core::Diagnostic> diagnostics;
 };
 
+struct XpjCanonicalImport {
+    session::FullSession session;
+    session::SessionBranch hardware_branch;
+    std::vector<std::string> unmapped_field_groups;
+    std::vector<core::Diagnostic> diagnostics;
+    bool valid = false;
+};
+
 // Read-only: opens the XPJ and its sibling ProjectData directory without
 // creating, changing, or deleting anything in the source folder.
 [[nodiscard]] XpjInspection inspect_xpj(const std::filesystem::path& project_file);
+[[nodiscard]] XpjCanonicalImport import_xpj(const std::filesystem::path& project_file);
+[[nodiscard]] std::string serialize_import_json(const XpjCanonicalImport& imported);
 
 } // namespace ubridge::mpc

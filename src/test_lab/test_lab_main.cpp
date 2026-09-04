@@ -103,6 +103,10 @@ void xpj_reader_test() {
     expect(report.json_payload && report.schema_version == 28, "XPJ reader must decode gzip preamble and JSON schema");
     expect(report.master_tempo == 96.5 && report.sample_count == 1 && report.track_count == 1, "XPJ reader must report core project counts");
     expect(report.sequence_count == 2 && report.song_slot_count == 1 && report.available_asset_count == 1, "XPJ reader must resolve sibling project assets");
+    const auto imported = ubridge::mpc::import_xpj(xpj);
+    expect(imported.valid && imported.hardware_branch.immutable_source_snapshot, "XPJ import must create a valid immutable hardware branch");
+    expect(imported.session.canonical.assets.size() == 1 && imported.session.tracks.size() == 1, "XPJ import must translate evidenced assets and tracks");
+    expect(!imported.unmapped_field_groups.empty() && !ubridge::mpc::serialize_import_json(imported).empty(), "XPJ import must report unmapped data and serialize its canonical result");
     std::filesystem::remove_all(root);
 }
 

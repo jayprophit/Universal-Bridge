@@ -316,6 +316,7 @@ Usage:
   ubridge route --device <mpc-sample|mpc-one|mpc-live|audient|audient-usb|midi-keyboard|midi-controller|generic-midi-controller|generic-usb-audio> --daw <cubase|reason|ableton-live|fl-studio|garageband|logic-pro|reaper|studio-one|pro-tools|mobile-generic>
   ubridge devices
   ubridge xpj-inspect --project <working-copy.xpj>
+  ubridge xpj-import --project <working-copy.xpj> --output <new-folder>
   ubridge midi-monitor --name <endpoint name> [--seconds <1-30>]
   ubridge midi-send-note --name <endpoint name> --note <0-127> --velocity <1-127> [--duration-ms <20-2000>]
  
@@ -1134,6 +1135,28 @@ int main(int argc, char* argv[]) {
                 }
                 return 0;
             }
+        }
+        if (argc >= 2 && std::string_view(argv[1]) == "xpj-import") {
+            fs::path project; fs::path output;
+            for (int index = 2; index < argc; ++index) {
+                const std::string argument = argv[index];
+                if (argument == "--project" && index + 1 < argc) project = argv[++index];
+                else if (argument == "--output" && index + 1 < argc) output = argv[++index];
+                else throw std::runtime_error("Unknown xpj-import option: " + argument + "\n\n" + ubridge::usage());
+            }
+            if (project.empty() || output.empty()) throw std::runtime_error("xpj-import requires --project and --output.");
+            std::error_code equivalent_error;
+            if (fs::equivalent(project.parent_path(), output, equivalent_error) && !equivalent_error) throw std::runtime_error("Import output must not be the source project folder.");
+            const auto imported = ubridge::mpc::import_xpj(project);
+            if (!imported.valid) throw std::runtime_error("XPJ canonical translation reported validation errors; no output was written.");
+            fs::create_directories(output);
+            ubridge::write_text(output / "session.ubridge.json", ubridge::mpc::serialize_import_json(imported));
+            std::cout << "MPC XPJ imported into immutable hardware branch\nTracks: " << imported.session.tracks.size()
+                      << "\nPrograms: " << imported.session.programs.size() << "\nAssigned pads: " << imported.session.pads.size()
+                      << "\nSlices: " << imported.session.slices.size() << "\nSequences: " << imported.session.sequences.size()
+                      << "\nPopulated songs: " << imported.session.songs.size() << "\nOutput: " << (output / "session.ubridge.json").string()
+                      << "\nXPJ write-back: disabled\n";
+            return 0;
         }
         if (argc >= 2 && std::string_view(argv[1]) == "xpj-inspect") {
             fs::path project;
