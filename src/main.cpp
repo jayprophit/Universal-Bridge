@@ -3,6 +3,7 @@
 
 #include <algorithm>
 #include <atomic>
+#include <array>
 #include <chrono>
 #include <cctype>
 #include <cstdint>
@@ -314,6 +315,7 @@ Usage:
   ubridge route --device <mpc-sample|mpc-one|mpc-live|audient|audient-usb|midi-keyboard|midi-controller|generic-midi-controller|generic-usb-audio> --daw <cubase|reason|ableton-live|fl-studio|garageband|logic-pro|reaper|studio-one|pro-tools|mobile-generic>
   ubridge devices
   ubridge midi-monitor --name <endpoint name> [--seconds <1-30>]
+  ubridge midi-send-note --name <endpoint name> --note <0-127> --velocity <1-127> [--duration-ms <20-2000>]
  
 Example live runtime: MPC Sample -> Windows 11 -> Cubase
  
@@ -1092,6 +1094,26 @@ void monitor_midi(std::string_view requested_name, int seconds) {
     std::cout << "MIDI monitor complete. Messages received: " << count.load() << ". Endpoint closed.\n";
 }
 
+void send_test_note(std::string_view requested_name, int note, int velocity, int duration_ms) {
+    auto midi = platform::make_system_midi_backend();
+    const auto endpoints = midi->enumerate_endpoints();
+    const auto found = std::find_if(endpoints.begin(), endpoints.end(), [requested_name](const platform::MidiEndpoint& endpoint) {
+        return endpoint.direction == platform::EndpointDirection::output && lower(endpoint.name) == lower(std::string(requested_name));
+    });
+    if (found == endpoints.end()) throw std::runtime_error("No MIDI output endpoint named '" + std::string(requested_name) + "' is currently available.");
+    if (!midi->open_output(found->id)) throw std::runtime_error("MIDI output '" + found->name + "' is busy or could not be opened.");
+    const std::array<std::uint8_t, 3> note_on{0x90U, static_cast<std::uint8_t>(note), static_cast<std::uint8_t>(velocity)};
+    const std::array<std::uint8_t, 3> note_off{0x80U, static_cast<std::uint8_t>(note), 0U};
+    const bool started = midi->send(found->id, note_on);
+    std::this_thread::sleep_for(std::chrono::milliseconds(duration_ms));
+    const bool stopped = midi->send(found->id, note_off);
+    midi->close(found->id);
+    if (!started || !stopped) throw std::runtime_error("The bounded MIDI note test did not complete; the endpoint was closed.");
+    std::cout << "Sent one bounded standard MIDI note to '" << found->name << "': channel=1 note=" << note
+              << " velocity=" << velocity << " duration_ms=" << duration_ms
+              << ". Note Off sent; endpoint closed. No SysEx or vendor command was sent.\n";
+}
+
 } // namespace ubridge
 
 int main(int argc, char* argv[]) {
@@ -1121,6 +1143,22 @@ int main(int argc, char* argv[]) {
             }
             if (name.empty() || seconds < 1 || seconds > 30) throw std::runtime_error("midi-monitor requires --name and --seconds between 1 and 30.");
             ubridge::monitor_midi(name, seconds);
+            return 0;
+        }
+        if (argc >= 2 && std::string_view(argv[1]) == "midi-send-note") {
+            std::string name; int note = -1; int velocity = -1; int duration_ms = 100;
+            for (int index = 2; index < argc; ++index) {
+                const std::string argument = argv[index];
+                if (argument == "--name" && index + 1 < argc) name = argv[++index];
+                else if (argument == "--note" && index + 1 < argc) note = std::stoi(argv[++index]);
+                else if (argument == "--velocity" && index + 1 < argc) velocity = std::stoi(argv[++index]);
+                else if (argument == "--duration-ms" && index + 1 < argc) duration_ms = std::stoi(argv[++index]);
+                else throw std::runtime_error("Unknown midi-send-note option: " + argument + "\n\n" + ubridge::usage());
+            }
+            if (name.empty() || note < 0 || note > 127 || velocity < 1 || velocity > 127 || duration_ms < 20 || duration_ms > 2000) {
+                throw std::runtime_error("midi-send-note requires --name, --note 0-127, --velocity 1-127, and --duration-ms 20-2000.");
+            }
+            ubridge::send_test_note(name, note, velocity, duration_ms);
             return 0;
         }
         if (argc >= 2 && std::string_view(argv[1]) == "route") {
