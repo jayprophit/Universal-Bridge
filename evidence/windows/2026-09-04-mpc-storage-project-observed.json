@@ -1,0 +1,32 @@
+{
+  "captured_at_local": "2026-09-04",
+  "operation": "read-only storage and project-format observation",
+  "device": {
+    "usb_identity": "VID_09E8&PID_305C",
+    "windows_service": "USBSTOR",
+    "volume": "removable FAT32",
+    "root_layout": ["MPC-Sample/Projects", "MPC-Sample/Samples"]
+  },
+  "prepared_project": {
+    "name": "UBRIDE-CERT-001.xpj",
+    "compressed_bytes": 48216,
+    "container": "gzip",
+    "payload_preamble": ["ACVS", "1.3.0.12", "SerialisableProjectData", "json", "Linux"],
+    "json_version": 28,
+    "project_data_directory_present": true
+  },
+  "evidence_level": "observed",
+  "qualified_capabilities": ["read-only-project-intake"],
+  "not_qualified": [
+    "XPJ write-back",
+    "lossless round trip",
+    "automatic DAW reconstruction",
+    "simultaneous storage-mode MIDI",
+    "vendor-specific device control"
+  ],
+  "safety": {
+    "device_writes": false,
+    "files_copied": false,
+    "vendor_commands_sent": false
+  }
+}
