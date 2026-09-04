@@ -176,6 +176,9 @@ void sync_and_backend_contract_test() {
                   "observed MPC Sample product ID must remain explicit");
     expect(platform::to_string(platform::BackendMaturity::experimental) == "experimental", "backend maturity must be reportable");
     expect(platform::make_system_device_discovery() != nullptr, "platform discovery factory must always return a safe implementation");
+    expect(platform::make_system_midi_backend() != nullptr, "platform MIDI factory must always return an implementation");
+    expect(platform::make_system_audio_backend() != nullptr, "platform audio factory must always return an implementation");
+    expect(platform::to_string(platform::EndpointDirection::input) == "input", "endpoint direction must be reportable");
 }
 
 void local_service_test() {

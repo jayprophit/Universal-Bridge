@@ -319,6 +319,7 @@ Options:
   --daw <supported-daw>  Target DAW for live route planning or project exchange. Default: cubase.
   --no-backup            Do not create a read-only project backup copy.
   --no-copy-assets       Inventory assets but do not copy audio/MIDI into Exchange/.
+  devices --probe-access Non-destructively open/close every MIDI endpoint; sends no data.
   --help                 Show this help text.
  
 Safety model:
@@ -987,13 +988,17 @@ void preflight(const Options& options) {
               << "Warnings: " << std::count_if(session.findings.begin(), session.findings.end(), [](const Finding& finding) { return finding.severity == "warning"; }) << "\n";
 }
 
-void list_devices() {
+void list_devices(bool probe_access = false) {
     auto discovery = platform::make_system_device_discovery();
     const auto devices = discovery->enumerate();
+    auto midi = platform::make_system_midi_backend();
+    auto audio = platform::make_system_audio_backend();
+    const auto midi_endpoints = midi->enumerate_endpoints();
+    const auto audio_endpoints = audio->enumerate_endpoints();
     std::cout << "Universal Bridge read-only device inventory\n"
-              << "Observed identity filter: VID 09E8 / PID 205C\n"
-              << "Backend maturity: experimental\n"
-              << "Matching device containers: " << devices.size() << "\n";
+              << "Discovery: generic present USB interfaces plus profile matching\n"
+              << "MPC Sample profile identity: VID 09E8 / PID 205C\n"
+              << "USB device containers: " << devices.size() << "\n";
     for (const auto& device : devices) {
         std::cout << "\nDevice: " << device.display_name << "\n"
                   << "Container: " << (device.container_id.empty() ? "unavailable" : device.container_id) << "\n"
@@ -1011,7 +1016,30 @@ void list_devices() {
                       << " source=" << evidence.source << "\n";
         }
     }
-    std::cout << "\nNo interfaces were opened. Discovery does not claim protocol, MIDI, audio, storage, or CDC-NCM support.\n";
+    std::cout << "\nMIDI endpoints (" << platform::to_string(midi->maturity()) << "): " << midi_endpoints.size() << "\n";
+    for (const auto& endpoint : midi_endpoints) {
+        std::cout << "  [" << platform::to_string(endpoint.direction) << "] " << endpoint.name
+                  << " id=" << endpoint.id << " protocol=" << endpoint.protocol
+                  << " backend=" << endpoint.backend << "\n";
+    }
+    if (probe_access) {
+        std::cout << "\nMIDI non-destructive open/close access probe:\n";
+        for (const auto& endpoint : midi_endpoints) {
+            const bool opened = endpoint.direction == platform::EndpointDirection::input
+                ? midi->open_input(endpoint.id, [](const platform::MidiMessage&) {})
+                : midi->open_output(endpoint.id);
+            std::cout << "  [" << platform::to_string(endpoint.direction) << "] " << endpoint.name
+                      << " access=" << (opened ? "opened" : "unavailable_or_busy") << "\n";
+            if (opened) midi->close(endpoint.id);
+        }
+        std::cout << "No MIDI messages were sent. All successfully opened endpoints were closed.\n";
+    }
+    std::cout << "\nAudio endpoints (" << platform::to_string(audio->maturity()) << "): " << audio_endpoints.size() << "\n";
+    for (const auto& endpoint : audio_endpoints) {
+        std::cout << "  [" << platform::to_string(endpoint.direction) << "] " << endpoint.name
+                  << " id=" << endpoint.id << " state=" << (endpoint.active ? "active" : "inactive") << "\n";
+    }
+    std::cout << "\nNo interfaces were opened during enumeration. Enumeration does not qualify live MIDI, audio capture, synchronization, storage, or proprietary control.\n";
 }
 
 } // namespace ubridge
@@ -1023,9 +1051,9 @@ int main(int argc, char* argv[]) {
             return 0;
         }
         if (argc >= 2 && std::string_view(argv[1]) == "devices") {
-            if (argc == 2 || (argc == 3 && std::string_view(argv[2]) == "--help")) {
-                if (argc == 2) {
-                    ubridge::list_devices();
+            if (argc == 2 || (argc == 3 && (std::string_view(argv[2]) == "--help" || std::string_view(argv[2]) == "--probe-access"))) {
+                if (argc == 2 || std::string_view(argv[2]) == "--probe-access") {
+                    ubridge::list_devices(argc == 3);
                 } else {
                     std::cout << ubridge::usage();
                 }

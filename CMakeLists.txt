@@ -38,7 +38,7 @@ target_link_libraries(ubridge_modules PUBLIC ubridge_core)
 target_compile_features(ubridge_modules PUBLIC cxx_std_20)
 
 if(WIN32)
-    target_link_libraries(ubridge_modules PRIVATE cfgmgr32)
+    target_link_libraries(ubridge_modules PRIVATE cfgmgr32 winmm ole32 uuid)
 endif()
 
 add_executable(ubridge
