@@ -93,10 +93,16 @@ std::vector<DeviceProfile> builtin_device_profiles() {
             {"read_only_project_intake", "audio_midi_exchange", "external_backup", "assisted_capture"}
         },
         {
-            "akai.mpc-one", "Akai", "MPC One / Live / X", "A",
+            "akai.mpc-one", "Akai", "MPC One", "A",
             device_capability("akai.mpc-one", true, true, true, true, 8, false, false, true, false, false),
             false, false,
             {"read_only_project_intake", "audio_midi_exchange", "capability_report"}
+        },
+        {
+            "akai.mpc-one-plus", "Akai", "MPC One+", "A",
+            device_capability("akai.mpc-one-plus", true, true, true, true, 8, false, false, true, false, false),
+            false, false,
+            {"official_mpc_desktop_controller_mode", "official_mpc_plugin_host_route", "read_only_project_intake", "audio_midi_exchange", "version_compatibility_gate"}
         },
         {
             "akai.mpc-live", "Akai", "MPC Live", "A",

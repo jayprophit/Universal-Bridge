@@ -39,6 +39,7 @@ void profile_registry_test() {
     expect(daws.size() >= 9, "DAW catalog must cover documented desktop and mobile host targets");
     expect(platforms.size() == 7, "platform catalog must hard-code all seven requested operating-system targets");
     expect(ubridge::modules::find_device_profile("akai.mpc-sample").has_value(), "MPC Sample profile must resolve");
+    expect(ubridge::modules::find_device_profile("akai.mpc-one-plus").has_value(), "MPC One+ official companion route profile must resolve independently");
     expect(ubridge::modules::find_device_profile("mixing-desk.digital-generic").has_value(), "generic digital mixing desk profile must resolve");
     expect(ubridge::modules::find_device_profile("soundcraft.spirit-digital-328").has_value(), "Soundcraft Spirit Digital 328 profile must resolve");
     expect(ubridge::modules::find_daw_profile("cubase").has_value(), "Cubase profile must resolve");
@@ -93,7 +94,7 @@ void xpj_reader_test() {
     const auto root = std::filesystem::temp_directory_path() / "ubridge-xpj-reader-test";
     std::filesystem::create_directories(root / "Fixture_[ProjectData]");
     std::ofstream(root / "Fixture_[ProjectData]" / "Kick.wav", std::ios::binary).put('\0');
-    const std::string payload = "ACVS\n1.3.0.12\nSerialisableProjectData\njson\nLinux\n{\"data\":{\"version\":28,\"masterTempo\":96.5,\"samples\":[{\"name\":\"Kick.wav\"}],\"tracks\":[{}],\"sequences\":[{},{}],\"songs\":[{}]}}";
+    const std::string payload = "ACVS\n1.3.0.12\nSerialisableProjectData\njson\nLinux\n" R"({"data":{"version":28,"masterTempo":96.5,"samples":[{"path":"Kick.wav"}],"tracks":[{"name":"Drum","volume":1.0,"pan":0.5,"mute":false,"program":{"type":-1}}],"sequences":[{"key":0,"value":{"name":"Sequence 01","lengthPulses":3840,"trackClipMaps":[[{"key":"Drum","value":{"startPulses":0,"endPulses":3840,"eventList":{"events":[{"type":3,"time":120,"channel":0,"note":{"note":36,"velocity":0.5,"length":240}},{"type":1,"time":0,"automation":{"parameter":131,"value":0.0}}]}}}]]}}],"songs":[{"name":"Song","items":[{"item.sequenceIndex":0,"item.repeats":2}]}]}})";
     const auto xpj = root / "Fixture.xpj";
     gzFile file = gzopen(xpj.string().c_str(), "wb");
     expect(file != nullptr, "test XPJ gzip fixture must open");
@@ -102,10 +103,13 @@ void xpj_reader_test() {
     const auto report = ubridge::mpc::inspect_xpj(xpj);
     expect(report.json_payload && report.schema_version == 28, "XPJ reader must decode gzip preamble and JSON schema");
     expect(report.master_tempo == 96.5 && report.sample_count == 1 && report.track_count == 1, "XPJ reader must report core project counts");
-    expect(report.sequence_count == 2 && report.song_slot_count == 1 && report.available_asset_count == 1, "XPJ reader must resolve sibling project assets");
+    expect(report.sequence_count == 1 && report.song_slot_count == 1 && report.available_asset_count == 1, "XPJ reader must resolve sibling project assets");
     const auto imported = ubridge::mpc::import_xpj(xpj);
     expect(imported.valid && imported.hardware_branch.immutable_source_snapshot, "XPJ import must create a valid immutable hardware branch");
     expect(imported.session.canonical.assets.size() == 1 && imported.session.tracks.size() == 1, "XPJ import must translate evidenced assets and tracks");
+    expect(imported.mapped_note_events == 1 && imported.unmapped_automation_events == 1, "XPJ import must map note events and count unqualified automation separately");
+    expect(imported.session.canonical.midi_events.front().note == 36 && imported.session.canonical.midi_events.front().velocity == 64, "XPJ note translation must preserve pitch and normalized velocity");
+    expect(imported.session.sequences.size() == 1 && imported.session.songs.front().steps.front().repetitions == 2, "XPJ import must preserve sequence and song repetition structure");
     expect(!imported.unmapped_field_groups.empty() && !ubridge::mpc::serialize_import_json(imported).empty(), "XPJ import must report unmapped data and serialize its canonical result");
     std::filesystem::remove_all(root);
 }

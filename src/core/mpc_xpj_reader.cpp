@@ -193,15 +193,54 @@ XpjCanonicalImport import_xpj(const std::filesystem::path& project_file) {
         }
         std::map<int, std::string> sequence_ids;
         if (data.contains("sequences") && data["sequences"].is_array()) {
-            for (const auto& entry : data["sequences"]) {
-                if (!entry.contains("value")) continue;
-                const int key = entry.value("key", static_cast<int>(sequence_ids.size()));
-                const auto& value = entry["value"];
+            for (const auto& sequence_entry : data["sequences"]) {
+                if (!sequence_entry.contains("value")) continue;
+                const int key = sequence_entry.value("key", static_cast<int>(sequence_ids.size()));
+                const auto& value = sequence_entry["value"];
                 session::Sequence sequence;
                 sequence.id = "sequence-" + std::to_string(key);
                 sequence.name = value.value("name", sequence.id);
                 sequence.length_ticks = value.value("lengthPulses", 0LL);
                 for (const auto& track : output.tracks) sequence.track_ids.push_back(track.id);
+                if (value.contains("trackClipMaps") && value["trackClipMaps"].is_array()) {
+                    std::size_t event_index = 0;
+                    for (const auto& clip_map : value["trackClipMaps"]) {
+                        if (!clip_map.is_array()) continue;
+                        for (const auto& clip_entry : clip_map) {
+                            if (!clip_entry.contains("value")) continue;
+                            const auto track_name = clip_entry.value("key", std::string{});
+                            const auto track = std::find_if(output.tracks.begin(), output.tracks.end(), [&track_name](const session::Track& item) { return item.name == track_name; });
+                            if (track == output.tracks.end()) continue;
+                            const auto& clip_value = clip_entry["value"];
+                            session::Clip clip;
+                            clip.id = sequence.id + "-" + track->id + "-clip";
+                            clip.track_id = track->id;
+                            clip.start_tick = clip_value.value("startPulses", 0LL);
+                            clip.length_ticks = clip_value.value("endPulses", 0LL) - clip.start_tick;
+                            clip.sequence_id = sequence.id;
+                            output.clips.push_back(clip);
+                            if (!clip_value.contains("eventList") || !clip_value["eventList"].contains("events")) continue;
+                            for (const auto& event : clip_value["eventList"]["events"]) {
+                                const int type = event.value("type", -1);
+                                if (type == 3 && event.contains("note")) {
+                                    const auto& note = event["note"];
+                                    core::MusicalEvent translated;
+                                    translated.id = sequence.id + "-event-" + std::to_string(event_index++);
+                                    translated.track_id = track->id;
+                                    translated.tick = event.value("time", 0LL);
+                                    translated.duration_ticks = note.value("length", 0LL);
+                                    translated.channel = event.value("channel", 0);
+                                    translated.note = note.value("note", -1);
+                                    translated.velocity = std::clamp(static_cast<int>(std::lround(note.value("velocity", 0.0) * 127.0)), 0, 127);
+                                    output.canonical.midi_events.push_back(std::move(translated));
+                                    ++imported.mapped_note_events;
+                                } else if (type == 1 && event.contains("automation")) {
+                                    ++imported.unmapped_automation_events;
+                                }
+                            }
+                        }
+                    }
+                }
                 sequence_ids[key] = sequence.id;
                 output.sequences.push_back(std::move(sequence));
             }
@@ -219,7 +258,7 @@ XpjCanonicalImport import_xpj(const std::filesystem::path& project_file) {
                 ++song_index;
             }
         }
-        imported.unmapped_field_groups = {"sequence event variants", "MPC plug-in state blobs", "automation and Q-Link assignments", "device synthesis parameters", "clip matrix state"};
+        imported.unmapped_field_groups = {"note probability ratchet articulation and modifiers", "MPC plug-in state blobs", "automation and Q-Link parameter identities", "device synthesis parameters", "clip matrix state"};
         imported.hardware_branch = session::create_branch("hardware-import-" + stable_id(project_file.stem().string()), session::BranchOrigin::hardware, {0, 0, 0}, {});
         imported.diagnostics = session::validate(output);
         imported.diagnostics.push_back({core::DiagnosticSeverity::warning, "xpj_partial_canonical_translation", "Supported project structure was imported; device-specific and unvalidated fields remain explicitly unmapped.", "Do not write back or claim lossless DAW reconstruction until every required field group is qualified."});
@@ -238,11 +277,14 @@ std::string serialize_import_json(const XpjCanonicalImport& imported) {
     root["source_id"] = value.canonical.source_id;
     root["branch"] = {{"id", imported.hardware_branch.id}, {"origin", "hardware"}, {"immutable_source_snapshot", imported.hardware_branch.immutable_source_snapshot}};
     root["tempo_bpm"] = value.tempo_bpm;
+    root["event_translation"] = {{"mapped_note_events", imported.mapped_note_events}, {"unmapped_automation_events", imported.unmapped_automation_events}};
     for (const auto& asset : value.canonical.assets) root["assets"].push_back({{"id", asset.id}, {"source_path", asset.source_path}, {"bytes", asset.bytes}, {"required", asset.required}});
     for (const auto& track : value.tracks) root["tracks"].push_back({{"id", track.id}, {"name", track.name}, {"kind", session::to_string(track.kind)}});
     for (const auto& pad : value.pads) root["pads"].push_back({{"id", pad.id}, {"index", pad.index}, {"midi_note", pad.midi_note}, {"program_id", pad.program_id}, {"asset_id", pad.sample_asset_id}, {"level", pad.level}, {"pan", pad.pan}});
     for (const auto& slice : value.slices) root["slices"].push_back({{"id", slice.id}, {"asset_id", slice.asset_id}, {"start_frame", slice.start_frame}, {"end_frame", slice.end_frame}, {"target_pad_index", slice.target_pad_index}});
     for (const auto& sequence : value.sequences) root["sequences"].push_back({{"id", sequence.id}, {"name", sequence.name}, {"length_ticks", sequence.length_ticks}});
+    for (const auto& clip : value.clips) root["clips"].push_back({{"id", clip.id}, {"track_id", clip.track_id}, {"start_tick", clip.start_tick}, {"length_ticks", clip.length_ticks}, {"sequence_id", clip.sequence_id}});
+    for (const auto& event : value.canonical.midi_events) root["midi_events"].push_back({{"id", event.id}, {"track_id", event.track_id}, {"tick", event.tick}, {"duration_ticks", event.duration_ticks}, {"channel", event.channel}, {"note", event.note}, {"velocity", event.velocity}});
     for (const auto& song : value.songs) { nlohmann::json output = {{"id", song.id}, {"name", song.name}}; for (const auto& step : song.steps) output["steps"].push_back({{"sequence_id", step.sequence_id}, {"repetitions", step.repetitions}}); root["songs"].push_back(std::move(output)); }
     root["unmapped_field_groups"] = imported.unmapped_field_groups;
     root["valid"] = imported.valid;

@@ -32,6 +32,8 @@ struct XpjCanonicalImport {
     session::SessionBranch hardware_branch;
     std::vector<std::string> unmapped_field_groups;
     std::vector<core::Diagnostic> diagnostics;
+    std::size_t mapped_note_events = 0;
+    std::size_t unmapped_automation_events = 0;
     bool valid = false;
 };
 

@@ -248,7 +248,7 @@ void copy_safely(const fs::path& source, const fs::path& destination) {
 
 [[nodiscard]] bool valid_device(const std::string& device) {
     static const std::set<std::string> supported = {
-        "mpc-sample", "mpc-one", "mpc-live", "audient", "audient-usb", "midi-keyboard",
+        "mpc-sample", "mpc-one", "mpc-one-plus", "mpc-live", "audient", "audient-usb", "midi-keyboard",
         "midi-controller", "generic-midi-controller", "generic-usb-audio"
         , "mixing-desk", "digital-mixing-desk", "soundcraft-spirit-digital-328"
     };
@@ -305,7 +305,7 @@ void copy_safely(const fs::path& source, const fs::path& destination) {
 }
 
 [[nodiscard]] std::string supported_device_list() {
-   return "mpc-sample, mpc-one, mpc-live, audient, audient-usb, midi-keyboard, midi-controller, generic-midi-controller, generic-usb-audio, mixing-desk, digital-mixing-desk, soundcraft-spirit-digital-328";
+   return "mpc-sample, mpc-one, mpc-one-plus, mpc-live, audient, audient-usb, midi-keyboard, midi-controller, generic-midi-controller, generic-usb-audio, mixing-desk, digital-mixing-desk, soundcraft-spirit-digital-328";
 }
 
 [[nodiscard]] std::string usage() {
