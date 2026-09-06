@@ -15,9 +15,8 @@ if(MSVC AND UBRIDGE_STATIC_MSVC_RUNTIME)
 endif()
 
 FetchContent_Declare(zlib
-    GIT_REPOSITORY https://github.com/madler/zlib.git
-    GIT_TAG v1.3.2
-    GIT_SHALLOW TRUE)
+    URL https://github.com/madler/zlib/archive/refs/tags/v1.3.2.tar.gz
+    URL_HASH SHA256=b99a0b86c0ba9360ec7e78c4f1e43b1cbdf1e6936c8fa0f6835c0cd694a495a1)
 set(ZLIB_BUILD_TESTING OFF CACHE BOOL "" FORCE)
 set(ZLIB_BUILD_SHARED OFF CACHE BOOL "" FORCE)
 set(ZLIB_INSTALL OFF CACHE BOOL "" FORCE)
@@ -35,6 +34,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 add_library(ubridge_core STATIC
     src/core/bridge_core.cpp
     src/core/protocol_capabilities.cpp
+    src/core/state_sync.cpp
     src/core/session_tools.cpp
     src/core/performance_tools.cpp
     src/core/sync_guard.cpp
@@ -140,16 +140,29 @@ find_package(Python3 COMPONENTS Interpreter QUIET)
 if(Python3_Interpreter_FOUND)
     add_test(NAME generated_output_validation COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/validate_outputs.py)
     set_tests_properties(generated_output_validation PROPERTIES ENVIRONMENT "UBRIDGE_BINARY=$<TARGET_FILE:ubridge>")
+    add_test(NAME research_catalog_validation COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/build_research_catalog.py --check)
+    add_test(NAME repository_asset_validation COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tests/validate_repository_assets.py)
+    add_custom_target(research_catalog
+        COMMAND ${Python3_EXECUTABLE} ${CMAKE_CURRENT_SOURCE_DIR}/tools/build_research_catalog.py --output ${CMAKE_CURRENT_BINARY_DIR}/research/poietek-catalog.sqlite3
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
+        COMMENT "Building local Poietek research catalog")
 endif()
 endif()
 
 install(TARGETS ubridge ubridge_service RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 install(DIRECTORY profiles/ DESTINATION ${CMAKE_INSTALL_DATADIR}/universal-bridge/profiles)
 install(DIRECTORY docs/ DESTINATION ${CMAKE_INSTALL_DOCDIR})
+install(DIRECTORY research/ DESTINATION ${CMAKE_INSTALL_DATADIR}/universal-bridge/research)
+install(DIRECTORY licenses/ DESTINATION ${CMAKE_INSTALL_DOCDIR}/licenses)
+install(FILES LICENSE DESTINATION ${CMAKE_INSTALL_DOCDIR})
+install(FILES "${zlib_SOURCE_DIR}/LICENSE" DESTINATION ${CMAKE_INSTALL_DOCDIR}/licenses/third-party RENAME zlib-LICENSE.txt)
+install(FILES "${nlohmann_json_SOURCE_DIR}/LICENSE.MIT" DESTINATION ${CMAKE_INSTALL_DOCDIR}/licenses/third-party RENAME nlohmann-json-LICENSE.MIT.txt)
 
 set(CPACK_PACKAGE_VENDOR "Universal Bridge")
 set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Capability-aware hardware session bridge foundation")
 set(CPACK_PACKAGE_VERSION ${PROJECT_VERSION})
+set(CPACK_PACKAGE_FILE_NAME "Universal-Bridge-${PROJECT_VERSION}-${CMAKE_SYSTEM_NAME}-${CMAKE_SYSTEM_PROCESSOR}")
+set(CPACK_PACKAGE_CHECKSUM SHA256)
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/LICENSE")
 set(CPACK_GENERATOR "ZIP")
 include(CPack)

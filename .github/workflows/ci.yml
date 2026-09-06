@@ -1,19 +1,22 @@
 name: CI
 on:
   push:
-    branches: [main, develop/v0.5-production-foundation]
+    branches: [main, develop/v0.5-production-foundation, "feature/**"]
   pull_request:
 permissions:
   contents: read
 jobs:
   build-test:
+    timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
         os: [windows-2022, ubuntu-24.04]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
       - name: Configure
         run: cmake --preset dev
       - name: Build (Unix)
@@ -40,3 +43,9 @@ jobs:
         run: cmake --preset release
       - name: Package
         run: cmake --build --preset release --target package
+      - name: Upload package
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: universal-bridge-${{ runner.os }}-${{ runner.arch }}
+          path: build/release/Universal-Bridge-*.zip
+          if-no-files-found: error

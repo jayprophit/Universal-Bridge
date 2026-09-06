@@ -1,5 +1,7 @@
 # Buildable Universal Bridge Architecture
 
+![Universal Bridge system map](assets/universal-bridge-system-map.svg)
+
 The Universal Bridge is organized as a reusable local core with adapters around it. This structure is designed to cover the entire supplied specification without forcing every device, DAW, platform, or plug-in format into one unstable executable.
 
 > The standalone app, background service, VST3/AU/CLAP clients, mobile companion, hardware adapters, and DAW adapters are all consumers of one canonical session and capability engine. None of them owns the project truth independently.
@@ -72,6 +74,8 @@ Every adapter must declare a compatibility profile before performing work. An ad
 ## Real-time and data-safety rules
 
 The product will never parse projects, access disk, enumerate USB devices, perform network operations, write traces, load profiles, or negotiate connections on a DAW audio thread. Plug-ins exchange bounded messages with the local service; the service owns hardware, filesystem, and long-running work. Each source project begins read-only and each potentially destructive action begins with an approved transaction and a restorable snapshot.
+
+![Acknowledged state-change flow](assets/state-acknowledgement-flow.svg)
 
 ## Source tree
 

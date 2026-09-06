@@ -2,6 +2,7 @@
 #include "ubridge/core/performance_tools.hpp"
 #include "ubridge/core/mpc_xpj_reader.hpp"
 #include "ubridge/core/session_tools.hpp"
+#include "ubridge/core/state_sync.hpp"
 #include "ubridge/core/sync_guard.hpp"
 #include "ubridge/platform/hardware_backends.hpp"
 #include "ubridge/platform/local_service.hpp"
@@ -232,6 +233,72 @@ void sync_and_backend_contract_test() {
     expect(ambiguous.ambiguous, "equally suitable devices must require user selection instead of silently choosing hardware");
 }
 
+void state_mirror_and_acknowledgement_test() {
+    using namespace ubridge::core;
+
+    ParameterMirror mirror;
+    mirror.parameter_id = "pad-A01.volume";
+    mirror.desired_value = "-6.0";
+    mirror.hardware = StateObservation{StateOrigin::hardware, "-3.0", {2, 2, 1}, 100, EvidenceLevel::observed};
+    mirror.daw = StateObservation{StateOrigin::daw, "-6.0", {2, 1, 2}, 110, EvidenceLevel::observed};
+    expect(evaluate_parameter_mirror(mirror) == MirrorState::pending_hardware, "a DAW observation at the desired value must leave the divergent hardware side pending");
+    mirror.desired_value = "-9.0";
+    expect(evaluate_parameter_mirror(mirror) == MirrorState::conflict, "divergent observations that match neither desired value must remain a conflict");
+
+    auto blocked = plan_parameter_write("write-0", "pad-A01.volume", WriteTarget::hardware, "-6.0", {2, 2, 2}, EvidenceLevel::observed, true, 1000, 5000);
+    expect(blocked.phase == WritePhase::blocked, "observed mapping evidence must not activate a physical parameter write");
+
+    auto write = plan_parameter_write("write-1", "pad-A01.volume", WriteTarget::hardware, "-6.0", {2, 2, 2}, EvidenceLevel::qualified, true, 1000, 5000);
+    expect(write.phase == WritePhase::planned, "qualified writable mapping may produce a bounded write plan");
+    expect(!dispatch_parameter_write(write, {2, 3, 2}, 2000) && write.phase == WritePhase::conflict, "revision drift must block dispatch");
+
+    auto acknowledged = plan_parameter_write("write-2", "pad-A01.volume", WriteTarget::hardware, "-6.0", {2, 2, 2}, EvidenceLevel::qualified, true, 1000, 5000);
+    expect(dispatch_parameter_write(acknowledged, {2, 2, 2}, 2000), "current write plan must dispatch without implying acknowledgement");
+    expect(acknowledge_parameter_write(acknowledged, {StateOrigin::hardware, "-6.0", {3, 3, 2}, 2500, EvidenceLevel::observed}), "matching target observation must acknowledge the write");
+    expect(acknowledged.phase == WritePhase::acknowledged, "acknowledged write must preserve a distinct lifecycle state");
+
+    auto timeout = plan_parameter_write("write-3", "pad-A02.pan", WriteTarget::daw, "0.25", {3, 3, 3}, EvidenceLevel::qualified, true, 1000, 5000);
+    expect(dispatch_parameter_write(timeout, {3, 3, 3}, 2000), "second write fixture must dispatch");
+    expect(expire_parameter_write(timeout, 6000) && timeout.phase == WritePhase::timed_out, "missing acknowledgement must time out instead of assuming success");
+
+    auto stale_ack = plan_parameter_write("write-4", "pad-A03.tune", WriteTarget::hardware, "2.0", {4, 4, 3}, EvidenceLevel::qualified, true, 1000, 5000);
+    expect(dispatch_parameter_write(stale_ack, {4, 4, 3}, 2000), "stale acknowledgement fixture must dispatch");
+    expect(!acknowledge_parameter_write(stale_ack, {StateOrigin::hardware, "2.0", {3, 3, 3}, 2500, EvidenceLevel::observed}) && stale_ack.phase == WritePhase::conflict,
+           "an observation from an older target revision must not acknowledge a write");
+}
+
+void clock_recording_and_hardware_learn_test() {
+    using namespace ubridge::core;
+
+    const std::vector<ClockDomainState> invalid_domains = {
+        {ClockDomainKind::midi_clock, ClockAuthority::hardware, EvidenceLevel::observed, "mpc-sample", true, 24.0, 50.0, 0.0},
+        {ClockDomainKind::audio_sample_clock, ClockAuthority::daw, EvidenceLevel::qualified, "audient", true, 0.0, 1.0, 64.0}
+    };
+    const auto invalid_clock = validate_clock_domains(invalid_domains);
+    expect(invalid_clock.size() == 2, "unqualified lock and missing sample rate must remain separate clock-domain failures");
+
+    const std::vector<ClockDomainState> valid_domains = {
+        {ClockDomainKind::transport, ClockAuthority::daw, EvidenceLevel::qualified, "host", true, 0.0, 0.0, 0.0},
+        {ClockDomainKind::midi_clock, ClockAuthority::daw, EvidenceLevel::qualified, "host", true, 24.0, 40.0, 0.0},
+        {ClockDomainKind::audio_sample_clock, ClockAuthority::external, EvidenceLevel::qualified, "interface", true, 48000.0, 1.0, 64.0}
+    };
+    expect(validate_clock_domains(valid_domains).empty(), "independently qualified clock domains with explicit authorities must validate");
+
+    const auto unsupported_both = plan_recording(RecordingDestination::both, MonitorPath::direct_hardware, RecordingProcessing::clean, EvidenceLevel::qualified, false, true);
+    expect(!unsupported_both.ready, "record-to-both must remain disabled when simultaneous capture is unavailable");
+    const auto clean_daw = plan_recording(RecordingDestination::daw, MonitorPath::direct_hardware, RecordingProcessing::clean_with_monitor_effects, EvidenceLevel::qualified, false, true);
+    expect(clean_daw.ready, "qualified DAW recording may monitor effects while preserving the clean source");
+
+    const auto learned = assess_hardware_learn("user.mpc-sample", {
+        {"midi-in:0", "pad-1", "note:36", LearnedControlKind::pad, 1, 127, 12, EvidenceLevel::observed},
+        {"midi-in:0", "play", "system:FA", LearnedControlKind::transport, 0, 1, 2, EvidenceLevel::observed}
+    }, false);
+    expect(learned.ready_to_save, "complete receive-only learning observations must be saveable as an unqualified profile");
+    const auto unsafe_feedback = assess_hardware_learn("user.mpc-sample", learned.observations, true);
+    expect(unsafe_feedback.ready_to_save, "requesting a separate feedback test must not invalidate receive-only observations");
+    expect(!unsafe_feedback.diagnostics.empty(), "outbound feedback must retain a separate qualification warning");
+}
+
 void local_service_test() {
     const auto device = *ubridge::modules::find_device_profile("akai.mpc-sample");
     const auto platform = *ubridge::modules::find_platform_profile("windows");
@@ -419,6 +486,8 @@ int main() {
     mobile_and_audio_safety_test();
     protocol_evidence_and_host_negotiation_test();
     conflict_and_transaction_test();
+    state_mirror_and_acknowledgement_test();
+    clock_recording_and_hardware_learn_test();
     sync_and_backend_contract_test();
     local_service_test();
     session_asset_and_archive_test();
