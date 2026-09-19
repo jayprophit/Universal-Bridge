@@ -1,0 +1,36 @@
+{
+  "profile_schema_version": "0.1.0",
+  "id": "soundcraft.spirit-digital-328",
+  "display_name": "Soundcraft Spirit Digital 328",
+  "status": "reference-profile",
+  "connection": {
+    "current_user_route": "optical-to-audio-interface",
+    "audio_interface": "Audient iD14",
+    "desk_output": "aux-optical-out",
+    "interface_input": "optical-in",
+    "transport": "adat-optical",
+    "physical_route_evidence": "user-confirmed-and-photo-observed"
+  },
+  "documented_capability_model": {
+    "adat_optical": "two eight-channel input and output groups",
+    "spdif": "stereo input and output",
+    "tdif": "two eight-channel input and output groups",
+    "midi_or_machine_control": "requires a separate documented control connection"
+  },
+  "current_evidence": {
+    "desk_identity": "declared-by-user",
+    "audient_windows_endpoints": "observed",
+    "optical_format": "observed-adat-aux-optical-route",
+    "aux_output_assignment": "unavailable-until-desk-menu-is-inspected",
+    "live_audio": "qualified-receive-only-on-tested-windows-configuration",
+    "qualified_windows_endpoint": "Input 9/10 (Audient iD14)",
+    "qualification_basis": "controlled quiet-versus-active signal comparison",
+    "mixer_control": "unavailable"
+  },
+  "safe_operations": [
+    "enumerate-audio-interface-endpoints",
+    "record-user-confirmed-channel-labels",
+    "inspect-wasapi-mix-format",
+    "perform-non-destructive-signal-presence-test-after-user-action"
+  ]
+}

@@ -1,0 +1,42 @@
+{
+  "schema_version": "0.1.0",
+  "observed_at": "2026-09-04",
+  "conditions": {
+    "cubase": "closed",
+    "monitors": "simultaneous receive-only",
+    "duration_seconds": 20,
+    "midi_messages_sent": false
+  },
+  "endpoints": [
+    {
+      "name": "MPC Sample",
+      "direction": "input",
+      "opened": true,
+      "messages_received": 165,
+      "observed_standard_messages": ["note_on", "note_off", "poly_key_pressure"],
+      "observed_notes_decimal": [36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51],
+      "timestamps": "WinMM callback milliseconds converted to microseconds"
+    },
+    {
+      "name": "E-MU Xboard25",
+      "direction": "input",
+      "opened": true,
+      "messages_received": 58,
+      "observed_standard_messages": ["note_on", "note_on_with_zero_velocity_as_note_off"],
+      "velocity_variation_observed": true,
+      "timestamps": "WinMM callback milliseconds converted to microseconds"
+    }
+  ],
+  "qualification": {
+    "mpc_to_bridge_midi_receive": "qualified-on-this-device-os-connection",
+    "keyboard_to_bridge_midi_receive": "qualified-on-this-device-os-connection",
+    "bridge_to_hardware_midi_send": "not-qualified",
+    "bridge_to_daw_delivery": "not-implemented",
+    "bidirectional_sync": "not-qualified"
+  },
+  "safety": {
+    "sysex_sent": false,
+    "vendor_commands_sent": false,
+    "hardware_state_changed_by_bridge": false
+  }
+}

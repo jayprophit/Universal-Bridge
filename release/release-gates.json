@@ -1,0 +1,87 @@
+{
+  "schema_version": 1,
+  "product_version": "0.5.0",
+  "release_status": "blocked_pre_release",
+  "gates": [
+    {
+      "id": "RG-001",
+      "name": "Persistent authenticated local IPC",
+      "status": "partial",
+      "owner": "platform-service",
+      "evidence": ["include/ubridge/platform/local_ipc.hpp", "src/platform/local_ipc.cpp", "evidence/windows/2026-09-06-authenticated-ipc-and-recovery.json"],
+      "exit_criteria": "Authenticated multi-client service, durable canonical sessions, restart recovery, version negotiation and least-privilege installer tests pass."
+    },
+    {
+      "id": "RG-002",
+      "name": "Windows MIDI ownership mediation",
+      "status": "partial",
+      "owner": "midi-platform",
+      "evidence": ["include/ubridge/core/midi_mediation.hpp", "src/core/midi_mediation.cpp"],
+      "exit_criteria": "Service-owned physical port, independently reviewed virtual DAW route, saturation behavior, reconnect and soak tests pass."
+    },
+    {
+      "id": "RG-003",
+      "name": "Complete transport synchronization",
+      "status": "partial",
+      "owner": "sync-core",
+      "evidence": ["include/ubridge/core/midi_mediation.hpp", "evidence/windows/2026-09-05-mpc-midi-clock-output.json"],
+      "exit_criteria": "Start, Stop, Continue, Song Position, one authority, echo prevention and live DAW-mediated two-way tests pass."
+    },
+    {
+      "id": "RG-004",
+      "name": "Streaming audio engine",
+      "status": "experimental",
+      "owner": "audio-platform",
+      "evidence": ["include/ubridge/core/realtime_buffer.hpp", "src/platform/hardware_backends.cpp", "evidence/windows/2026-09-06-mpc-sample-streaming-audio.json"],
+      "exit_criteria": "Declared formats, channel maps, latency, dropout, discontinuity, recovery, file transaction and simultaneous-destination tests pass."
+    },
+    {
+      "id": "RG-005",
+      "name": "MPC project completeness and safe writing",
+      "status": "partial",
+      "owner": "mpc-adapter",
+      "evidence": ["include/ubridge/core/mpc_xpj_reader.hpp", "src/core/mpc_xpj_reader.cpp"],
+      "exit_criteria": "Version corpus, fuzzing, opaque-field retention, semantic round trip and separately approved device-write transaction pass."
+    },
+    {
+      "id": "RG-006",
+      "name": "Live parameter synchronization",
+      "status": "partial",
+      "owner": "sync-core",
+      "evidence": ["include/ubridge/core/parameter_sync.hpp", "include/ubridge/core/state_sync.hpp"],
+      "exit_criteria": "Exact MPC and DAW mappings pass direction, range, rate, echo, acknowledgement, conflict and physical recovery tests."
+    },
+    {
+      "id": "RG-007",
+      "name": "DAW plug-in and host certification",
+      "status": "partial",
+      "owner": "daw-adapters",
+      "evidence": ["src/plugins/vst3/README.md", "src/plugins/vst3/bridge_processor.cpp", "evidence/windows/2026-09-06-vst3-validator.json", "profiles/cubase.adapter.json", "profiles/reason.adapter.json"],
+      "exit_criteria": "Signed thin plug-in, authenticated IPC, automation/reopen/crash tests and declared Cubase/Reason host-version matrices pass."
+    },
+    {
+      "id": "RG-008",
+      "name": "Commercial installer and signing",
+      "status": "partial",
+      "owner": "release-engineering",
+      "evidence": ["packaging/windows/README.md", "packaging/windows/PRE_RELEASE_NOTICE.rtf", "evidence/windows/2026-09-06-unsigned-msi-lifecycle.json"],
+      "exit_criteria": "Signed installer passes clean install, upgrade, repair, rollback and uninstall on every supported Windows target."
+    },
+    {
+      "id": "RG-009",
+      "name": "Release legal work",
+      "status": "blocked_external",
+      "owner": "legal-commercial",
+      "evidence": ["licenses/EULA.md", "licenses/PRIVACY.md", "licenses/TERMS.md", "licenses/SDK-LICENSE.md"],
+      "exit_criteria": "Qualified counsel approves versioned EULA, privacy, commercial, trademark, SDK, distribution and support obligations."
+    },
+    {
+      "id": "RG-010",
+      "name": "Extended quality qualification",
+      "status": "partial",
+      "owner": "quality",
+      "evidence": [".github/workflows/ci.yml", ".github/workflows/codeql.yml", "CMakePresets.json", "src/test_lab/soak_main.cpp", "evidence/windows/2026-09-06-toolchain-quality.json", "SECURITY.md"],
+      "exit_criteria": "Sanitizers, fuzzing, static analysis, dependency review, benchmarks, forced recovery, soak and hardware/OS matrix all pass."
+    }
+  ]
+}

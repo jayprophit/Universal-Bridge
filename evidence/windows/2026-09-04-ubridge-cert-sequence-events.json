@@ -1,0 +1,13 @@
+{
+  "source_sha256": "ADB3D2D5B08274E2011EE98F4097E858224103EA02F439987EC04A2519019D6C",
+  "operation": "read-only sequence event classification and canonical translation",
+  "total_events": 127,
+  "mapped_note_events": 70,
+  "unmapped_automation_events": 57,
+  "note_fields_mapped": ["track", "sequence", "time", "length", "channel", "note", "velocity"],
+  "note_fields_pending": ["probability", "ratchet", "articulation", "modifiers"],
+  "automation_reason_pending": "Numeric MPC parameter identities require qualified semantic mappings.",
+  "source_changes": false,
+  "write_back_enabled": false,
+  "evidence_level": "observed"
+}
