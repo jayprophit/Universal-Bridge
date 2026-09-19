@@ -47,6 +47,26 @@ struct AudioSignalProbe {
     std::string status;
 };
 
+enum class AudioCaptureState {
+    idle,
+    starting,
+    capturing,
+    stopped,
+    open_failed,
+    format_mismatch,
+    stream_failed,
+};
+
+struct AudioCaptureStatus {
+    AudioCaptureState state = AudioCaptureState::idle;
+    std::uint64_t frames_captured = 0;
+    std::uint64_t samples_dropped = 0;
+    std::uint64_t discontinuities = 0;
+    std::uint32_t sample_rate = 0;
+    std::uint16_t channels = 0;
+    std::uint16_t bits_per_sample = 0;
+};
+
 // Persist portable intent, not an operating-system endpoint ID. Runtime IDs are
 // deliberately resolved again whenever hardware is attached or the OS changes.
 struct EndpointMatchRule {
@@ -84,13 +104,13 @@ struct DiscoveredDevice {
 };
 
 class IDeviceDiscovery {
-public:
+  public:
     virtual ~IDeviceDiscovery() = default;
     [[nodiscard]] virtual std::vector<DiscoveredDevice> enumerate() = 0;
 };
 
 class IMidiBackend {
-public:
+  public:
     using ReceiveCallback = std::function<void(const MidiMessage&)>;
     virtual ~IMidiBackend() = default;
     [[nodiscard]] virtual BackendMaturity maturity() const noexcept = 0;
@@ -103,12 +123,14 @@ public:
 };
 
 class IAudioBackend {
-public:
+  public:
     virtual ~IAudioBackend() = default;
     [[nodiscard]] virtual BackendMaturity maturity() const noexcept = 0;
     [[nodiscard]] virtual std::vector<AudioEndpoint> enumerate_endpoints() const = 0;
     [[nodiscard]] virtual AudioSignalProbe probe_input(std::string_view endpoint_id, std::uint32_t duration_ms) = 0;
     virtual bool begin_capture(std::string_view endpoint_id, int sample_rate, int channels) = 0;
+    [[nodiscard]] virtual std::size_t read_capture(std::span<float> destination) noexcept = 0;
+    [[nodiscard]] virtual AudioCaptureStatus capture_status() const noexcept = 0;
     virtual void stop_capture() noexcept = 0;
 };
 
@@ -117,9 +139,12 @@ public:
 [[nodiscard]] std::unique_ptr<IAudioBackend> make_system_audio_backend();
 [[nodiscard]] std::string to_string(BackendMaturity maturity);
 [[nodiscard]] std::string to_string(EndpointDirection direction);
+[[nodiscard]] std::string to_string(AudioCaptureState state);
 [[nodiscard]] std::string midi_message_semantic(std::span<const std::uint8_t> message);
-[[nodiscard]] EndpointMatch resolve_midi_endpoint(const std::vector<MidiEndpoint>& endpoints, const EndpointMatchRule& rule);
-[[nodiscard]] EndpointMatch resolve_audio_endpoint(const std::vector<AudioEndpoint>& endpoints, const EndpointMatchRule& rule);
+[[nodiscard]] EndpointMatch resolve_midi_endpoint(const std::vector<MidiEndpoint>& endpoints,
+                                                  const EndpointMatchRule& rule);
+[[nodiscard]] EndpointMatch resolve_audio_endpoint(const std::vector<AudioEndpoint>& endpoints,
+                                                   const EndpointMatchRule& rule);
 [[nodiscard]] std::vector<core::ProtocolEvidence> protocol_evidence_for(const DiscoveredDevice& device);
 
 inline constexpr std::uint16_t mpc_sample_vendor_id = 0x09E8;

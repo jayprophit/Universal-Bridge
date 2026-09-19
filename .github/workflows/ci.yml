@@ -49,3 +49,37 @@ jobs:
           name: universal-bridge-${{ runner.os }}-${{ runner.arch }}
           path: build/release/Universal-Bridge-*.zip
           if-no-files-found: error
+  sanitizers:
+    timeout-minutes: 30
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Configure ASan and UBSan
+        run: cmake --preset sanitizers
+      - name: Build ASan and UBSan
+        run: cmake --build --preset sanitizers
+      - name: Test ASan and UBSan
+        run: ctest --preset sanitizers
+  vst3-sdk-validation:
+    timeout-minutes: 30
+    runs-on: windows-2022
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          persist-credentials: false
+      - name: Obtain pinned Steinberg VST3 SDK
+        shell: pwsh
+        run: >-
+          git clone --branch v3.8.1_build_84 --depth 1 --recurse-submodules
+          --shallow-submodules https://github.com/steinbergmedia/vst3sdk.git build/vendor/vst3sdk
+      - name: Configure optional VST3 client
+        shell: pwsh
+        run: >-
+          cmake -S . -B build/vst3-ci -G "Visual Studio 17 2022" -A x64
+          -DUBRIDGE_BUILD_VST3_CLIENT=ON
+          -DUBRIDGE_VST3_SDK_ROOT="$pwd/build/vendor/vst3sdk"
+          -DUBRIDGE_WARNINGS_AS_ERRORS=ON
+      - name: Build and run Steinberg validator
+        run: cmake --build build/vst3-ci --config Release --target UniversalBridgeVST3 --parallel 4

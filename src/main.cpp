@@ -3,10 +3,11 @@
 #include "ubridge/platform/hardware_backends.hpp"
 
 #include <algorithm>
-#include <atomic>
 #include <array>
-#include <chrono>
+#include <atomic>
 #include <cctype>
+#include <chrono>
+#include <cmath>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -27,7 +28,6 @@ namespace fs = std::filesystem;
 
 namespace ubridge {
 
-constexpr std::string_view kProductName = "Universal Hardware Session Bridge";
 constexpr std::string_view kSchemaVersion = "0.1.0";
 constexpr std::uintmax_t kLargeFileWarningBytes = 1ULL * 1024ULL * 1024ULL * 1024ULL;
 
@@ -106,9 +106,8 @@ struct Session {
 };
 
 [[nodiscard]] std::string lower(std::string value) {
-    std::transform(value.begin(), value.end(), value.begin(), [](unsigned char character) {
-        return static_cast<char>(std::tolower(character));
-    });
+    std::transform(value.begin(), value.end(), value.begin(),
+                   [](unsigned char character) { return static_cast<char>(std::tolower(character)); });
     return value;
 }
 
@@ -116,18 +115,18 @@ struct Session {
     std::ostringstream stream;
     for (const char character : value) {
         switch (character) {
-            case '\\': stream << "\\\\"; break;
-            case '\"': stream << "\\\""; break;
-            case '\n': stream << "\\n"; break;
-            case '\r': stream << "\\r"; break;
-            case '\t': stream << "\\t"; break;
-            default:
-                if (static_cast<unsigned char>(character) < 0x20U) {
-                    stream << "\\u" << std::hex << std::setw(4) << std::setfill('0')
-                           << static_cast<int>(static_cast<unsigned char>(character)) << std::dec;
-                } else {
-                    stream << character;
-                }
+        case '\\': stream << "\\\\"; break;
+        case '\"': stream << "\\\""; break;
+        case '\n': stream << "\\n"; break;
+        case '\r': stream << "\\r"; break;
+        case '\t': stream << "\\t"; break;
+        default:
+            if (static_cast<unsigned char>(character) < 0x20U) {
+                stream << "\\u" << std::hex << std::setw(4) << std::setfill('0')
+                       << static_cast<int>(static_cast<unsigned char>(character)) << std::dec;
+            } else {
+                stream << character;
+            }
         }
     }
     return stream.str();
@@ -179,7 +178,8 @@ struct Session {
     const auto extension = lower(path.extension().string());
     static const std::set<std::string> audio_extensions = {".wav", ".aif", ".aiff", ".flac", ".mp3", ".ogg"};
     static const std::set<std::string> midi_extensions = {".mid", ".midi"};
-    static const std::set<std::string> project_extensions = {".xpj", ".xpm", ".xpn", ".akp", ".als", ".cpr", ".reason", ".rns"};
+    static const std::set<std::string> project_extensions = {".xpj", ".xpm", ".xpn",    ".akp",
+                                                             ".als", ".cpr", ".reason", ".rns"};
 
     if (audio_extensions.contains(extension)) {
         return "audio";
@@ -193,9 +193,7 @@ struct Session {
     return "unknown";
 }
 
-[[nodiscard]] std::string path_to_posix(const fs::path& path) {
-    return path.generic_string();
-}
+[[nodiscard]] std::string path_to_posix(const fs::path& path) { return path.generic_string(); }
 
 [[nodiscard]] bool is_same_or_nested(const fs::path& candidate, const fs::path& parent) {
     auto candidate_part = candidate.begin();
@@ -247,11 +245,19 @@ void copy_safely(const fs::path& source, const fs::path& destination) {
 }
 
 [[nodiscard]] bool valid_device(const std::string& device) {
-    static const std::set<std::string> supported = {
-        "mpc-sample", "mpc-one", "mpc-one-plus", "mpc-live", "audient", "audient-usb", "midi-keyboard",
-        "midi-controller", "generic-midi-controller", "generic-usb-audio"
-        , "mixing-desk", "digital-mixing-desk", "soundcraft-spirit-digital-328"
-    };
+    static const std::set<std::string> supported = {"mpc-sample",
+                                                    "mpc-one",
+                                                    "mpc-one-plus",
+                                                    "mpc-live",
+                                                    "audient",
+                                                    "audient-usb",
+                                                    "midi-keyboard",
+                                                    "midi-controller",
+                                                    "generic-midi-controller",
+                                                    "generic-usb-audio",
+                                                    "mixing-desk",
+                                                    "digital-mixing-desk",
+                                                    "soundcraft-spirit-digital-328"};
     return supported.contains(lower(device));
 }
 
@@ -265,18 +271,16 @@ void copy_safely(const fs::path& source, const fs::path& destination) {
 
 [[nodiscard]] std::string daw_import_tag(const std::string& daw) {
     const auto normalized = lower(daw);
-    static const std::map<std::string, std::string> aliases = {
-        {"cubase", "CUBASE"},
-        {"reason", "REASON"},
-        {"ableton-live", "ABLETON_LIVE"},
-        {"fl-studio", "FL_STUDIO"},
-        {"garageband", "GARAGEBAND"},
-        {"logic-pro", "LOGIC_PRO"},
-        {"reaper", "REAPER"},
-        {"studio-one", "STUDIO_ONE"},
-        {"pro-tools", "PRO_TOOLS"},
-        {"mobile-generic", "MOBILE_GENERIC"}
-    };
+    static const std::map<std::string, std::string> aliases = {{"cubase", "CUBASE"},
+                                                               {"reason", "REASON"},
+                                                               {"ableton-live", "ABLETON_LIVE"},
+                                                               {"fl-studio", "FL_STUDIO"},
+                                                               {"garageband", "GARAGEBAND"},
+                                                               {"logic-pro", "LOGIC_PRO"},
+                                                               {"reaper", "REAPER"},
+                                                               {"studio-one", "STUDIO_ONE"},
+                                                               {"pro-tools", "PRO_TOOLS"},
+                                                               {"mobile-generic", "MOBILE_GENERIC"}};
     const auto found = aliases.find(normalized);
     if (found != aliases.end()) {
         return found->second;
@@ -294,22 +298,24 @@ void copy_safely(const fs::path& source, const fs::path& destination) {
 }
 
 [[nodiscard]] bool valid_platform(const std::string& platform) {
-    static const std::set<std::string> supported = {
-        "windows", "macos", "linux", "android", "chromeos", "ipados", "ios"
-    };
+    static const std::set<std::string> supported = {"windows",  "macos",  "linux", "android",
+                                                    "chromeos", "ipados", "ios"};
     return supported.contains(platform);
 }
 
 [[nodiscard]] std::string supported_daw_list() {
-   return "mpc-beats, cubase, reason, ableton-live, garageband, logic-pro, fl-studio, fl-studio-mobile, reaper, studio-one, pro-tools, mobile-generic";
+    return "mpc-beats, cubase, reason, ableton-live, garageband, logic-pro, fl-studio, fl-studio-mobile, reaper, "
+           "studio-one, pro-tools, mobile-generic";
 }
 
 [[nodiscard]] std::string supported_device_list() {
-   return "mpc-sample, mpc-one, mpc-one-plus, mpc-live, audient, audient-usb, midi-keyboard, midi-controller, generic-midi-controller, generic-usb-audio, mixing-desk, digital-mixing-desk, soundcraft-spirit-digital-328";
+    return "mpc-sample, mpc-one, mpc-one-plus, mpc-live, audient, audient-usb, midi-keyboard, midi-controller, "
+           "generic-midi-controller, generic-usb-audio, mixing-desk, digital-mixing-desk, "
+           "soundcraft-spirit-digital-328";
 }
 
 [[nodiscard]] std::string usage() {
-   return R"(Universal Hardware Session Bridge — developer prototype
+    return R"(Universal Hardware Session Bridge — developer prototype
  
 Usage:
   ubridge preflight --project <folder> --daw <cubase|reason|ableton-live|fl-studio|garageband|logic-pro|reaper|studio-one|pro-tools|mobile-generic> --output <folder> [options]
@@ -317,6 +323,7 @@ Usage:
   ubridge devices
   ubridge xpj-inspect --project <working-copy.xpj>
   ubridge xpj-import --project <working-copy.xpj> --output <new-folder>
+  ubridge audio-capture-smoke --name <input endpoint name> [--duration-ms <100-10000>]
   ubridge midi-monitor --name <endpoint name> [--seconds <1-30>]
   ubridge midi-send-note --name <endpoint name> --note <0-127> --velocity <1-127> [--duration-ms <20-2000>]
   ubridge midi-send-transport --name <endpoint name> [--bpm <30-300>] [--beats <1-16>]
@@ -386,7 +393,8 @@ Safety model:
         throw std::runtime_error("Supported DAW targets are: " + supported_daw_list() + ".");
     }
     if (!valid_platform(options.platform)) {
-        throw std::runtime_error("Supported target operating systems are windows, macos, linux, android, chromeos, ipados, and ios.");
+        throw std::runtime_error(
+            "Supported target operating systems are windows, macos, linux, android, chromeos, ipados, and ios.");
     }
     if (!valid_device(options.device)) {
         throw std::runtime_error("Supported hardware device profiles are: " + supported_device_list() + ".");
@@ -399,7 +407,9 @@ Safety model:
     std::error_code error;
     fs::recursive_directory_iterator iterator(project_root, fs::directory_options::skip_permission_denied, error);
     if (error) {
-        findings.push_back({"warning", "directory_scan_limited", "The project directory could not be scanned completely.", "Check folder permissions and run the preflight again."});
+        findings.push_back({"warning", "directory_scan_limited",
+                            "The project directory could not be scanned completely.",
+                            "Check folder permissions and run the preflight again."});
     }
 
     for (const auto& entry : iterator) {
@@ -421,7 +431,9 @@ Safety model:
         const auto size = entry.file_size(error);
         if (error) {
             error.clear();
-            findings.push_back({"warning", "file_size_unavailable", "File size could not be determined for " + path_to_posix(relative_path) + ".", "Confirm this file is readable before transfer."});
+            findings.push_back({"warning", "file_size_unavailable",
+                                "File size could not be determined for " + path_to_posix(relative_path) + ".",
+                                "Confirm this file is readable before transfer."});
             continue;
         }
 
@@ -449,13 +461,17 @@ Safety model:
     }
 
     if (inventory.projects.empty()) {
-        findings.push_back({"warning", "project_file_not_detected", "No recognized project file was found in the selected folder.", "Select the complete MPC project directory or continue with an asset-only bridge session."});
+        findings.push_back(
+            {"warning", "project_file_not_detected", "No recognized project file was found in the selected folder.",
+             "Select the complete MPC project directory or continue with an asset-only bridge session."});
     }
     if (inventory.audio.empty()) {
-        findings.push_back({"warning", "no_audio_assets", "No supported audio assets were found.", "Confirm that associated ProjectData or sample folders were included."});
+        findings.push_back({"warning", "no_audio_assets", "No supported audio assets were found.",
+                            "Confirm that associated ProjectData or sample folders were included."});
     }
     if (inventory.total_bytes > kLargeFileWarningBytes) {
-        findings.push_back({"info", "large_project", "The selected project contains more than 1 GiB of files.", "Choose a destination with sufficient free storage; copy operations can take time."});
+        findings.push_back({"info", "large_project", "The selected project contains more than 1 GiB of files.",
+                            "Choose a destination with sufficient free storage; copy operations can take time."});
     }
 
     return inventory;
@@ -536,24 +552,45 @@ Safety model:
 }
 
 void add_capability_findings(Session& session) {
-    session.findings.push_back({"info", "effective_route", "The selected route is MPC Sample → " + session.platform.id + " → " + session.daw + ".", "Use the generated Exchange package as the safe initial DAW hand-off."});
+    session.findings.push_back({"info", "effective_route",
+                                "The selected route is MPC Sample → " + session.platform.id + " → " + session.daw + ".",
+                                "Use the generated Exchange package as the safe initial DAW hand-off."});
     if (session.platform.state == "portable_core_target") {
-        session.findings.push_back({"warning", "platform_not_qualified", "The " + session.platform.id + " profile is hard-coded as a portable desktop-core target, not a certified runtime route.", "Use the output for planning or developer testing; qualify device, audio, MIDI, plug-in, and DAW behavior before claiming support."});
+        session.findings.push_back(
+            {"warning", "platform_not_qualified",
+             "The " + session.platform.id +
+                 " profile is hard-coded as a portable desktop-core target, not a certified runtime route.",
+             "Use the output for planning or developer testing; qualify device, audio, MIDI, plug-in, and DAW behavior "
+             "before claiming support."});
     }
     if (session.platform.state == "future_mobile_host") {
-        session.findings.push_back({"info", "mobile_host_planned", "The " + session.platform.id + " profile is hard-coded for future mobile/tablet bridge and companion modes.", "No native mobile executable or direct hardware/DAW route is enabled in this prototype; treat the session as a capability plan and exchange record."});
-        session.findings.push_back({"warning", "desktop_daw_handoff_only", "Cubase and Reason are retained as desktop hand-off targets in this mobile/tablet capability record.", "Do not interpret this as native Cubase or Reason hosting on the selected mobile/tablet platform."});
+        session.findings.push_back({"info", "mobile_host_planned",
+                                    "The " + session.platform.id +
+                                        " profile is hard-coded for future mobile/tablet bridge and companion modes.",
+                                    "No native mobile executable or direct hardware/DAW route is enabled in this "
+                                    "prototype; treat the session as a capability plan and exchange record."});
+        session.findings.push_back(
+            {"warning", "desktop_daw_handoff_only",
+             "Cubase and Reason are retained as desktop hand-off targets in this mobile/tablet capability record.",
+             "Do not interpret this as native Cubase or Reason hosting on the selected mobile/tablet platform."});
     }
     if (session.capability.audio_channels == 2) {
-        session.findings.push_back({"warning", "stereo_capture_limit", "The reference device profile declares two audio channels; the current prototype does not open hardware audio endpoints.", "Do not expect simultaneous individual pad stems; use qualified sequential capture only after device-control validation."});
+        session.findings.push_back({"warning", "stereo_capture_limit",
+                                    "The reference device profile declares two audio channels; the current prototype "
+                                    "does not open hardware audio endpoints.",
+                                    "Do not expect simultaneous individual pad stems; use qualified sequential capture "
+                                    "only after device-control validation."});
     }
-    session.findings.push_back({"info", "daw_project_generation_gated", "Direct native " + session.daw + " project-file generation is intentionally disabled in this prototype.", "The bridge writes a transparent exchange bundle until the relevant supported adapter route is validated."});
-    session.findings.push_back({"info", "writeback_disabled", "Hardware project write-back and live parameter synchronization are disabled.", "The source remains protected while parser, capability, and transaction modules mature."});
+    session.findings.push_back(
+        {"info", "daw_project_generation_gated",
+         "Direct native " + session.daw + " project-file generation is intentionally disabled in this prototype.",
+         "The bridge writes a transparent exchange bundle until the relevant supported adapter route is validated."});
+    session.findings.push_back(
+        {"info", "writeback_disabled", "Hardware project write-back and live parameter synchronization are disabled.",
+         "The source remains protected while parser, capability, and transaction modules mature."});
 }
 
-[[nodiscard]] std::string bool_json(bool value) {
-    return value ? "true" : "false";
-}
+[[nodiscard]] std::string bool_json(bool value) { return value ? "true" : "false"; }
 
 void write_asset_json(std::ostringstream& stream, const std::vector<Asset>& assets, int indent) {
     const std::string padding(static_cast<std::size_t>(indent), ' ');
@@ -675,10 +712,20 @@ void write_findings_json(std::ostringstream& stream, const std::vector<Finding>&
     return stream.str();
 }
 
-[[nodiscard]] std::string platform_runtime_route_manifest(const std::string& platform, const std::string& device, const std::string& daw) {
+[[nodiscard]] std::string platform_runtime_route_manifest(const std::string& platform, const std::string& device,
+                                                          const std::string& daw) {
     const auto normalized = lower(platform);
     std::ostringstream stream;
-    stream << "# " << (normalized == "windows" ? "Windows" : normalized == "macos" ? "macOS" : normalized == "linux" ? "Linux" : normalized == "android" ? "Android" : normalized == "chromeos" ? "ChromeOS" : normalized == "ipados" ? "iPadOS" : normalized == "ios" ? "iOS" : "Cross-platform") << " live-route runtime blueprint\n\n"
+    stream << "# "
+           << (normalized == "windows"    ? "Windows"
+               : normalized == "macos"    ? "macOS"
+               : normalized == "linux"    ? "Linux"
+               : normalized == "android"  ? "Android"
+               : normalized == "chromeos" ? "ChromeOS"
+               : normalized == "ipados"   ? "iPadOS"
+               : normalized == "ios"      ? "iOS"
+                                          : "Cross-platform")
+           << " live-route runtime blueprint\n\n"
            << "Target device: " << device << "\n"
            << "Target DAW: " << daw << "\n"
            << "Host OS: " << (normalized.empty() ? "selected platform" : normalized) << "\n\n";
@@ -686,58 +733,72 @@ void write_findings_json(std::ostringstream& stream, const std::vector<Finding>&
     if (normalized == "windows") {
         stream << "## 1. Device acquisition and discovery\n"
                << "- USB enumeration: SetupAPI + WinUSB or libusb backend with VID/PID and interface filtering.\n"
-               << "- Device identity: exact VID/PID and interface enumeration must be verified before any endpoint is opened.\n"
-               << "- Safety gate: the runtime will refuse any path that does not pass an explicit device identity check and user approval.\n\n"
+               << "- Device identity: exact VID/PID and interface enumeration must be verified before any endpoint is "
+                  "opened.\n"
+               << "- Safety gate: the runtime will refuse any path that does not pass an explicit device identity "
+                  "check and user approval.\n\n"
                << "## 2. MIDI backend\n"
                << "- Windows MIDI Services / MMSystem endpoints for device discovery, input, output, and routing.\n"
-               << "- MIDI clock, note, CC, transport, and program-change routing are normalized to the canonical bridge session model.\n"
-               << "- Safety gate: MIDI I/O is disabled until the user approves the session and a valid port assignment exists.\n\n"
+               << "- MIDI clock, note, CC, transport, and program-change routing are normalized to the canonical "
+                  "bridge session model.\n"
+               << "- Safety gate: MIDI I/O is disabled until the user approves the session and a valid port assignment "
+                  "exists.\n\n"
                << "## 3. Audio backend\n"
                << "- WASAPI for standard audio endpoints and ASIO for low-latency DAW-grade capture when available.\n"
-               << "- Audient driver path is added only after the interface is enumerated and confirmed to be the correct hardware.\n"
-               << "- Safety gate: audio capture is sequential, approved, and stored in a protected output folder rather than the source project folder.\n\n"
+               << "- Audient driver path is added only after the interface is enumerated and confirmed to be the "
+                  "correct hardware.\n"
+               << "- Safety gate: audio capture is sequential, approved, and stored in a protected output folder "
+                  "rather than the source project folder.\n\n"
                << "## 4. DAW route\n"
                << "- First production route: MPC Sample -> Windows 11 -> Cubase.\n"
-               << "- The runtime creates an approved bridge session, converts the project to canonical form, writes the transport/session plan, and only then emits a DAW import or host action.\n"
-               << "- Safety gate: direct DAW project generation is disabled unless the exact DAW/host adapter is qualified.\n\n";
+               << "- The runtime creates an approved bridge session, converts the project to canonical form, writes "
+                  "the transport/session plan, and only then emits a DAW import or host action.\n"
+               << "- Safety gate: direct DAW project generation is disabled unless the exact DAW/host adapter is "
+                  "qualified.\n\n";
     } else if (normalized == "macos") {
-        stream << "## 1. Device acquisition and discovery\n"
-               << "- USB enumeration: IOKit + CoreFoundation with vendor/product filtering and safe interface probing.\n"
-               << "- Device identity: exact model, vendor, and endpoint identity must be verified before opening any device path.\n"
-               << "- Safety gate: the runtime requires user approval before any core I/O path is opened.\n\n"
-               << "## 2. MIDI backend\n"
-               << "- CoreMIDI for device discovery, routing, and clock synchronization.\n"
-               << "- MIDI event normalization is performed before any DAW import or write-back.\n"
-               << "- Safety gate: no direct hardware writes until the MIDI path is stable and approved.\n\n"
-               << "## 3. Audio backend\n"
-               << "- CoreAudio and AVFoundation / AudioToolbox for capture and routing.\n"
-               << "- ASIO or driver-specific audio backends are optional and only used when the host route is validated.\n"
-               << "- Safety gate: all capture remains sequential and output-folder scoped.\n\n"
-               << "## 4. DAW route\n"
-               << "- Primary Apple route: GarageBand / Logic Pro / Desktop host environments when the route is qualified.\n"
-               << "- The desktop runtime does not claim live DAW-directed project generation until the host adapter is certified.\n"
-               << "- Safety gate: import and automation remain exchange-based until the route is qualified.\n\n";
+        stream
+            << "## 1. Device acquisition and discovery\n"
+            << "- USB enumeration: IOKit + CoreFoundation with vendor/product filtering and safe interface probing.\n"
+            << "- Device identity: exact model, vendor, and endpoint identity must be verified before opening any "
+               "device path.\n"
+            << "- Safety gate: the runtime requires user approval before any core I/O path is opened.\n\n"
+            << "## 2. MIDI backend\n"
+            << "- CoreMIDI for device discovery, routing, and clock synchronization.\n"
+            << "- MIDI event normalization is performed before any DAW import or write-back.\n"
+            << "- Safety gate: no direct hardware writes until the MIDI path is stable and approved.\n\n"
+            << "## 3. Audio backend\n"
+            << "- CoreAudio and AVFoundation / AudioToolbox for capture and routing.\n"
+            << "- ASIO or driver-specific audio backends are optional and only used when the host route is validated.\n"
+            << "- Safety gate: all capture remains sequential and output-folder scoped.\n\n"
+            << "## 4. DAW route\n"
+            << "- Primary Apple route: GarageBand / Logic Pro / Desktop host environments when the route is "
+               "qualified.\n"
+            << "- The desktop runtime does not claim live DAW-directed project generation until the host adapter is "
+               "certified.\n"
+            << "- Safety gate: import and automation remain exchange-based until the route is qualified.\n\n";
     } else if (normalized == "linux") {
-        stream << "## 1. Device acquisition and discovery\n"
-               << "- USB enumeration: libudev + hidapi/libusb with product and interface filtering.\n"
-               << "- Device identity: vendor/product IDs and sysfs metadata must match before any device path is opened.\n"
-               << "- Safety gate: no device control until identity, permission, and user approval have passed.\n\n"
-               << "## 2. MIDI backend\n"
-               << "- ALSA / PipeWire MIDI for endpoint discovery and routing.\n"
-               << "- MIDI clock and note/event normalization are performed in the canonical bridge session model.\n"
-               << "- Safety gate: no write-back path is enabled without a verified route and user approval.\n\n"
-               << "## 3. Audio backend\n"
-               << "- PipeWire and ALSA are used for capture and routing.\n"
-               << "- JACK is optional for low-latency routing when the DAW route is validated.\n"
-               << "- Safety gate: all capture is sequential, output-folder scoped, and rollback-ready.\n\n"
-               << "## 4. DAW route\n"
-               << "- Desktop Linux route is supported as a capability record, not a live qualified route.\n"
-               << "- Target DAWs remain exchange-first until the specific Linux adapter is qualified.\n\n";
+        stream
+            << "## 1. Device acquisition and discovery\n"
+            << "- USB enumeration: libudev + hidapi/libusb with product and interface filtering.\n"
+            << "- Device identity: vendor/product IDs and sysfs metadata must match before any device path is opened.\n"
+            << "- Safety gate: no device control until identity, permission, and user approval have passed.\n\n"
+            << "## 2. MIDI backend\n"
+            << "- ALSA / PipeWire MIDI for endpoint discovery and routing.\n"
+            << "- MIDI clock and note/event normalization are performed in the canonical bridge session model.\n"
+            << "- Safety gate: no write-back path is enabled without a verified route and user approval.\n\n"
+            << "## 3. Audio backend\n"
+            << "- PipeWire and ALSA are used for capture and routing.\n"
+            << "- JACK is optional for low-latency routing when the DAW route is validated.\n"
+            << "- Safety gate: all capture is sequential, output-folder scoped, and rollback-ready.\n\n"
+            << "## 4. DAW route\n"
+            << "- Desktop Linux route is supported as a capability record, not a live qualified route.\n"
+            << "- Target DAWs remain exchange-first until the specific Linux adapter is qualified.\n\n";
     } else if (normalized == "android") {
         stream << "## 1. Device acquisition and discovery\n"
                << "- Android USB host / OTG discovery and permission checks via the Android runtime.\n"
                << "- Device identity and permission grants are required before any hardware endpoint is opened.\n"
-               << "- Safety gate: direct host control is disabled unless the Android companion route is explicitly enabled.\n\n"
+               << "- Safety gate: direct host control is disabled unless the Android companion route is explicitly "
+                  "enabled.\n\n"
                << "## 2. MIDI backend\n"
                << "- Companion route uses Android MIDI APIs or virtual port bridge where vendor support is available.\n"
                << "- MIDI mapping remains canonicalized and subject to user approval.\n"
@@ -748,48 +809,58 @@ void write_findings_json(std::ostringstream& stream, const std::vector<Finding>&
                << "- Safety gate: value ranges and transport timing must be validated before the route is live.\n\n"
                << "## 4. DAW route\n"
                << "- Android route is a mobile-companion path, not a desktop host claiming full DAW control.\n"
-               << "- FL Studio Mobile / GarageBand style flows use exchange and companion sync only until the route is certified.\n\n";
+               << "- FL Studio Mobile / GarageBand style flows use exchange and companion sync only until the route is "
+                  "certified.\n\n";
     } else if (normalized == "chromeos") {
-        stream << "## 1. Device acquisition and discovery\n"
-               << "- ChromeOS USB enumeration and permission gating with vendor-specific USB host checks where available.\n"
-               << "- Device identity and runtime permission are required before any endpoint is opened.\n"
-               << "- Safety gate: the route remains a capability plan until device and host qualification is complete.\n\n"
-               << "## 2. MIDI and audio backend\n"
-               << "- ChromeOS companion flow depends on Android/Linux-compatible USB host and audio routing on the device stack.\n"
-               << "- Capture and routing remain exchange-first until validated.\n"
-               << "- Safety gate: no live synchronization is enabled without explicit user approval.\n\n"
-               << "## 4. DAW route\n"
-               << "- This route is a future mobile/tablet companion path, not a direct live DAW runtime.\n"
-               << "- DAW hand-off remains exchange or companion based until verified.\n\n";
+        stream
+            << "## 1. Device acquisition and discovery\n"
+            << "- ChromeOS USB enumeration and permission gating with vendor-specific USB host checks where "
+               "available.\n"
+            << "- Device identity and runtime permission are required before any endpoint is opened.\n"
+            << "- Safety gate: the route remains a capability plan until device and host qualification is complete.\n\n"
+            << "## 2. MIDI and audio backend\n"
+            << "- ChromeOS companion flow depends on Android/Linux-compatible USB host and audio routing on the device "
+               "stack.\n"
+            << "- Capture and routing remain exchange-first until validated.\n"
+            << "- Safety gate: no live synchronization is enabled without explicit user approval.\n\n"
+            << "## 4. DAW route\n"
+            << "- This route is a future mobile/tablet companion path, not a direct live DAW runtime.\n"
+            << "- DAW hand-off remains exchange or companion based until verified.\n\n";
     } else if (normalized == "ipados" || normalized == "ios") {
-        stream << "## 1. Device acquisition and discovery\n"
-               << "- iOS/iPadOS route uses the device's USB host + companion app permissions and approved device pairing.\n"
-               << "- Device identity is verified before any hardware endpoint is opened.\n"
-               << "- Safety gate: the route is companion-only until the host API and hardware contract are qualified.\n\n"
-               << "## 2. MIDI backend\n"
-               << "- CoreMIDI and companion app routing are used for approved traffic only.\n"
-               << "- Timing and clock alignment must be validated before any state sync is activated.\n"
-               << "- Safety gate: no direct write-back is enabled until the route is confirmed.\n\n"
-               << "## 3. Audio backend\n"
-               << "- CoreAudio and the mobile audio system are used for approved capture and companion routing.\n"
-               << "- The route remains output-folder scoped and does not claim direct hardware write-back.\n"
-               << "- Safety gate: every capture and route remains reversible.\n\n"
-               << "## 4. DAW route\n"
-               << "- This is a mobile-companion route for GarageBand / FL Studio Mobile / other app hosts, not a direct desktop DAW bridge.\n"
-               << "- Project handoff remains exchange-first and user-approved.\n\n";
+        stream
+            << "## 1. Device acquisition and discovery\n"
+            << "- iOS/iPadOS route uses the device's USB host + companion app permissions and approved device "
+               "pairing.\n"
+            << "- Device identity is verified before any hardware endpoint is opened.\n"
+            << "- Safety gate: the route is companion-only until the host API and hardware contract are qualified.\n\n"
+            << "## 2. MIDI backend\n"
+            << "- CoreMIDI and companion app routing are used for approved traffic only.\n"
+            << "- Timing and clock alignment must be validated before any state sync is activated.\n"
+            << "- Safety gate: no direct write-back is enabled until the route is confirmed.\n\n"
+            << "## 3. Audio backend\n"
+            << "- CoreAudio and the mobile audio system are used for approved capture and companion routing.\n"
+            << "- The route remains output-folder scoped and does not claim direct hardware write-back.\n"
+            << "- Safety gate: every capture and route remains reversible.\n\n"
+            << "## 4. DAW route\n"
+            << "- This is a mobile-companion route for GarageBand / FL Studio Mobile / other app hosts, not a direct "
+               "desktop DAW bridge.\n"
+            << "- Project handoff remains exchange-first and user-approved.\n\n";
     } else {
         stream << "## 1. Generic cross-platform route\n"
                << "- This is a capability record for a platform that is not live-qualified in the current runtime.\n"
-               << "- The runtime must resolve the exact device, host API, and DAW route before any hardware action occurs.\n"
+               << "- The runtime must resolve the exact device, host API, and DAW route before any hardware action "
+                  "occurs.\n"
                << "- Safety gate: no device or host writes are allowed until the route is qualified.\n\n";
     }
 
     stream << "## 5. Approval and rollback\n"
            << "- User must approve the bridge session before any hardware route or write-back is opened.\n"
            << "- Every change is journaled with diff validation, conflict detection, and rollback support.\n"
-           << "- Safety gate: any mismatch between source revision, output session, or DAW state aborts the write-back.\n\n"
+           << "- Safety gate: any mismatch between source revision, output session, or DAW state aborts the "
+              "write-back.\n\n"
            << "## 6. Scope that remains external\n"
-           << "- Real vendor SDK contracts, firmware validation, DAW host APIs, and live hardware qualification remain external to this sandboxed repo.\n"
+           << "- Real vendor SDK contracts, firmware validation, DAW host APIs, and live hardware qualification remain "
+              "external to this sandboxed repo.\n"
            << "- This is the production implementation blueprint, not a hardware-verified live session.\n";
     return stream.str();
 }
@@ -836,54 +907,76 @@ void write_findings_json(std::ostringstream& stream, const std::vector<Finding>&
     std::ostringstream stream;
     const auto daw_name = daw_display_name(session.daw);
     const auto import_tag = daw_import_tag(session.daw);
-    stream << "# Universal Bridge Preflight Report\n\n"
-           << "**Session:** `" << session.id << "`  \n"
-           << "**Created:** " << session.created_at << "  \n"
-           << "**Selected workflow:** MPC Sample → " << session.platform.id << " → " << daw_name << "  \n"
-           << "**Platform state:** `" << session.platform.state << "` / `" << session.platform.host_mode << "`  \n"
-           << "**Source safety:** Read-only source; all generated data is written below the selected output folder.\n\n"
-           << "> This developer prototype creates a transparent exchange package. It does not modify the source hardware project, write back to the MPC, generate proprietary DAW project files, or claim live synchronization.\n\n"
-           << "## Capability outcome\n\n"
-           << "| Capability | Status |\n|---|---|\n"
-           << "| Project intake | " << (session.platform.local_preflight ? "Supported by the platform contract" : "Recorded for a future native mobile/tablet host") << " |\n"
-           << "| Platform runtime qualification | " << (session.platform.runtime_qualified ? "Windows reference route" : "Not qualified; capability profile only") << " |\n"
-           << "| Asset inventory and fingerprinting | Supported in the shared core |\n"
-           << "| USB MIDI route | " << (session.capability.usb_midi ? "Profile-declared; hardware service not yet active" : "Not active on this platform profile") << " |\n"
-           << "| USB audio | " << (session.capability.usb_audio ? "Two-channel profile declaration; capture is not yet active" : "Not active on this platform profile") << " |\n"
-           << "| Direct " << daw_name << " project creation | Intentionally gated pending adapter validation |\n"
-           << "| VST3 bridge client | " << (session.platform.desktop_plugin_route ? "Architecture target; not shipped in this CLI prototype" : "Not an active generic mobile/tablet route") << " |\n"
-           << "| Sequential stem capture | Gated pending reliable device-control validation |\n"
-           << "| Live bidirectional state synchronization | Not enabled |\n\n"
-           << "## Inventory\n\n"
-           << "| Item | Count |\n|---|---:|\n"
-           << "| Recognized project files | " << session.inventory.projects.size() << " |\n"
-           << "| Audio assets | " << session.inventory.audio.size() << " |\n"
-           << "| MIDI assets | " << session.inventory.midi.size() << " |\n"
-           << "| Unclassified files | " << session.inventory.unknown.size() << " |\n"
-           << "| Total scanned bytes | " << session.inventory.total_bytes << " |\n"
-           << "| Warnings | " << warnings << " |\n\n"
-           << "## Generated output\n\n"
-           << "| Path | Purpose |\n|---|---|\n"
-           << "| `session.ubridge.json` | Versioned neutral-session snapshot with capabilities and fingerprints |\n"
-           << "| `diagnostics.json` | Machine-readable preflight findings |\n"
-           << "| `Exchange/Audio/` | Copied audio assets, retaining original relative structure |\n"
-           << "| `Exchange/MIDI/` | Copied MIDI assets, retaining original relative structure |\n"
-           << "| `Exchange/IMPORT_" << import_tag << ".md` | Target-specific import procedure and limitations |\n"
-           << "| `Backup/` | Read-only project backup copy, if enabled |\n\n"
-           << "## Stage-gate readiness\n\n"
-           << "| Gate | Status | Notes |\n|---|---|---|\n"
-           << "| Product stage | Foundation pre-release | The current build is a safe read-only bridge foundation, not a live hardware bridge |\n"
-           << "| Live hardware sync | Blocked | Requires actual device, vendor API, and DAW host qualification |\n"
-           << "| Next executable milestone | Single real route | Implement one validated route such as MPC Sample -> Windows -> Cubase before broadening scope |\n"
-           << "| Required operational evidence | External | Vendor contract, hardware-in-the-loop tests, and host adapter validation are still needed |\n\n"
-           << "## Findings\n\n"
-           << "| Severity | Code | Detail | Recommendation |\n|---|---|---|---|\n";
+    stream
+        << "# Universal Bridge Preflight Report\n\n"
+        << "**Session:** `" << session.id << "`  \n"
+        << "**Created:** " << session.created_at << "  \n"
+        << "**Selected workflow:** MPC Sample → " << session.platform.id << " → " << daw_name << "  \n"
+        << "**Platform state:** `" << session.platform.state << "` / `" << session.platform.host_mode << "`  \n"
+        << "**Source safety:** Read-only source; all generated data is written below the selected output folder.\n\n"
+        << "> This developer prototype creates a transparent exchange package. It does not modify the source hardware "
+           "project, write back to the MPC, generate proprietary DAW project files, or claim live synchronization.\n\n"
+        << "## Capability outcome\n\n"
+        << "| Capability | Status |\n|---|---|\n"
+        << "| Project intake | "
+        << (session.platform.local_preflight ? "Supported by the platform contract"
+                                             : "Recorded for a future native mobile/tablet host")
+        << " |\n"
+        << "| Platform runtime qualification | "
+        << (session.platform.runtime_qualified ? "Windows reference route" : "Not qualified; capability profile only")
+        << " |\n"
+        << "| Asset inventory and fingerprinting | Supported in the shared core |\n"
+        << "| USB MIDI route | "
+        << (session.capability.usb_midi ? "Profile-declared; hardware service not yet active"
+                                        : "Not active on this platform profile")
+        << " |\n"
+        << "| USB audio | "
+        << (session.capability.usb_audio ? "Two-channel profile declaration; capture is not yet active"
+                                         : "Not active on this platform profile")
+        << " |\n"
+        << "| Direct " << daw_name << " project creation | Intentionally gated pending adapter validation |\n"
+        << "| VST3 bridge client | "
+        << (session.platform.desktop_plugin_route ? "Architecture target; not shipped in this CLI prototype"
+                                                  : "Not an active generic mobile/tablet route")
+        << " |\n"
+        << "| Sequential stem capture | Gated pending reliable device-control validation |\n"
+        << "| Live bidirectional state synchronization | Not enabled |\n\n"
+        << "## Inventory\n\n"
+        << "| Item | Count |\n|---|---:|\n"
+        << "| Recognized project files | " << session.inventory.projects.size() << " |\n"
+        << "| Audio assets | " << session.inventory.audio.size() << " |\n"
+        << "| MIDI assets | " << session.inventory.midi.size() << " |\n"
+        << "| Unclassified files | " << session.inventory.unknown.size() << " |\n"
+        << "| Total scanned bytes | " << session.inventory.total_bytes << " |\n"
+        << "| Warnings | " << warnings << " |\n\n"
+        << "## Generated output\n\n"
+        << "| Path | Purpose |\n|---|---|\n"
+        << "| `session.ubridge.json` | Versioned neutral-session snapshot with capabilities and fingerprints |\n"
+        << "| `diagnostics.json` | Machine-readable preflight findings |\n"
+        << "| `Exchange/Audio/` | Copied audio assets, retaining original relative structure |\n"
+        << "| `Exchange/MIDI/` | Copied MIDI assets, retaining original relative structure |\n"
+        << "| `Exchange/IMPORT_" << import_tag << ".md` | Target-specific import procedure and limitations |\n"
+        << "| `Backup/` | Read-only project backup copy, if enabled |\n\n"
+        << "## Stage-gate readiness\n\n"
+        << "| Gate | Status | Notes |\n|---|---|---|\n"
+        << "| Product stage | Foundation pre-release | The current build is a safe read-only bridge foundation, not a "
+           "live hardware bridge |\n"
+        << "| Live hardware sync | Blocked | Requires actual device, vendor API, and DAW host qualification |\n"
+        << "| Next executable milestone | Single real route | Implement one validated route such as MPC Sample -> "
+           "Windows -> Cubase before broadening scope |\n"
+        << "| Required operational evidence | External | Vendor contract, hardware-in-the-loop tests, and host adapter "
+           "validation are still needed |\n\n"
+        << "## Findings\n\n"
+        << "| Severity | Code | Detail | Recommendation |\n|---|---|---|---|\n";
     for (const auto& finding : session.findings) {
-        stream << "| " << finding.severity << " | `" << finding.code << "` | " << finding.message << " | " << finding.recommendation << " |\n";
+        stream << "| " << finding.severity << " | `" << finding.code << "` | " << finding.message << " | "
+               << finding.recommendation << " |\n";
     }
     stream << "\n## Import path\n\n"
            << "Import the copied audio and MIDI assets into a new project in " << daw_display_name(session.daw)
-           << ". Preserve their relative names and consult the session manifest before recreating any routing, effects, or automation. The next adapter phase will convert this auditable exchange package into host-assisted creation where the DAW exposes a safe documented route.\n\n"
+           << ". Preserve their relative names and consult the session manifest before recreating any routing, "
+              "effects, or automation. The next adapter phase will convert this auditable exchange package into "
+              "host-assisted creation where the DAW exposes a safe documented route.\n\n"
            << "## Source\n\n"
            << "Selected project folder: `" << path_to_posix(options.project) << "`\n";
     return stream.str();
@@ -893,14 +986,22 @@ void write_findings_json(std::ostringstream& stream, const std::vector<Finding>&
     const std::string daw_name = daw_display_name(session.daw);
     std::ostringstream stream;
     stream << "# " << daw_name << " Exchange Package\n\n"
-           << "This package was generated by the Universal Hardware Session Bridge developer prototype. It preserves source assets and metadata without modifying the original MPC project.\n\n"
+           << "This package was generated by the Universal Hardware Session Bridge developer prototype. It preserves "
+              "source assets and metadata without modifying the original MPC project.\n\n"
            << "## Safe import procedure\n\n"
-           << "1. Create a new " << daw_name << " project at the project tempo and meter documented in `../session.ubridge.json` when available.\n"
+           << "1. Create a new " << daw_name
+           << " project at the project tempo and meter documented in `../session.ubridge.json` when available.\n"
            << "2. Import the contents of `Audio/` and `MIDI/` while retaining source names and folder context.\n"
-           << "3. Use `../session.ubridge.json` and `../preflight-report.md` as the authoritative record of supported, rendered, and unavailable data.\n"
+           << "3. Use `../session.ubridge.json` and `../preflight-report.md` as the authoritative record of supported, "
+              "rendered, and unavailable data.\n"
            << "4. Do not delete or overwrite the original MPC project or its ProjectData folder.\n\n"
            << "## Current limitations\n\n"
-           << "The selected platform profile is `" << session.platform.id << "` with state `" << session.platform.state << "`. The prototype does not parse proprietary MPC arrangement, effects, or automation structures; create proprietary " << daw_name << " project files; or perform hardware write-back. These features require validated parser and host-adapter work.\n";
+           << "The selected platform profile is `" << session.platform.id << "` with state `" << session.platform.state
+           << "`. The prototype does not parse proprietary MPC arrangement, effects, or automation structures; create "
+              "proprietary "
+           << daw_name
+           << " project files; or perform hardware write-back. These features require validated parser and "
+              "host-adapter work.\n";
     return stream.str();
 }
 
@@ -922,7 +1023,8 @@ void copy_inventory_assets(Session& session, const Options& options) {
 
 void backup_project(const Options& options, Session& session) {
     if (!options.create_backup) {
-        session.findings.push_back({"info", "backup_skipped", "Backup creation was explicitly disabled.", "Keep a separate verified copy of the original project before further work."});
+        session.findings.push_back({"info", "backup_skipped", "Backup creation was explicitly disabled.",
+                                    "Keep a separate verified copy of the original project before further work."});
         return;
     }
 
@@ -930,15 +1032,19 @@ void backup_project(const Options& options, Session& session) {
     std::error_code error;
     fs::create_directories(backup_root.parent_path(), error);
     if (error) {
-        session.findings.push_back({"warning", "backup_directory_unavailable", "The backup directory could not be created: " + error.message(), "Confirm the output folder is writable before proceeding."});
+        session.findings.push_back({"warning", "backup_directory_unavailable",
+                                    "The backup directory could not be created: " + error.message(),
+                                    "Confirm the output folder is writable before proceeding."});
         return;
     }
     fs::copy(options.project, backup_root, fs::copy_options::recursive | fs::copy_options::copy_symlinks, error);
     if (error) {
-        session.findings.push_back({"warning", "backup_partial", "The backup copy did not complete: " + error.message(), "Confirm the source project has an independent backup before proceeding."});
+        session.findings.push_back({"warning", "backup_partial", "The backup copy did not complete: " + error.message(),
+                                    "Confirm the source project has an independent backup before proceeding."});
     } else {
         session.backup_completed = true;
-        session.findings.push_back({"info", "backup_created", "A separate output-folder backup copy was created.", "Retain this backup until the imported DAW session is verified."});
+        session.findings.push_back({"info", "backup_created", "A separate output-folder backup copy was created.",
+                                    "Retain this backup until the imported DAW session is verified."});
     }
 }
 
@@ -953,7 +1059,8 @@ void backup_project(const Options& options, Session& session) {
     session.backup_requested = options.create_backup;
     session.inventory = build_inventory(options.project, session.findings);
     session.project_fingerprint = session_fingerprint(session.inventory);
-    session.id = "ubridge-" + session.created_at.substr(0, 10) + "-" + session.project_fingerprint.substr(session.project_fingerprint.size() - 8);
+    session.id = "ubridge-" + session.created_at.substr(0, 10) + "-" +
+                 session.project_fingerprint.substr(session.project_fingerprint.size() - 8);
     add_capability_findings(session);
     return session;
 }
@@ -978,7 +1085,8 @@ void preflight(const Options& options) {
         throw std::runtime_error("Cannot resolve output directory: " + error.message());
     }
     if (is_same_or_nested(canonical_output, canonical_project)) {
-        throw std::runtime_error("The output folder must be outside the source project folder to preserve source safety.");
+        throw std::runtime_error(
+            "The output folder must be outside the source project folder to preserve source safety.");
     }
 
     Session session = create_session(options);
@@ -989,14 +1097,19 @@ void preflight(const Options& options) {
     write_text(options.output / "diagnostics.json", diagnostics_json(session));
     write_text(options.output / "readiness-summary.json", readiness_summary_json(session));
     write_text(options.output / "preflight-report.md", markdown_report(session, options));
-    write_text(options.output / "Exchange" / ("IMPORT_" + daw_import_tag(session.daw) + ".md"), daw_import_guide(session));
+    write_text(options.output / "Exchange" / ("IMPORT_" + daw_import_tag(session.daw) + ".md"),
+               daw_import_guide(session));
 
     std::cout << "Preflight completed safely\n"
               << "Session: " << session.id << "\n"
               << "Platform: " << session.platform.id << " (" << session.platform.state << ")\n"
               << "Output:  " << options.output << "\n"
-              << "Assets:  " << session.inventory.audio.size() << " audio, " << session.inventory.midi.size() << " MIDI\n"
-              << "Warnings: " << std::count_if(session.findings.begin(), session.findings.end(), [](const Finding& finding) { return finding.severity == "warning"; }) << "\n";
+              << "Assets:  " << session.inventory.audio.size() << " audio, " << session.inventory.midi.size()
+              << " MIDI\n"
+              << "Warnings: "
+              << std::count_if(session.findings.begin(), session.findings.end(),
+                               [](const Finding& finding) { return finding.severity == "warning"; })
+              << "\n";
 }
 
 void list_devices(bool probe_access = false, bool probe_audio = false) {
@@ -1017,40 +1130,40 @@ void list_devices(bool probe_access = false, bool probe_audio = false) {
         for (const auto& usb_interface : device.interfaces) {
             std::cout << "  MI_" << (usb_interface.interface_number.empty() ? "??" : usb_interface.interface_number)
                       << " service=" << (usb_interface.service.empty() ? "unknown" : usb_interface.service)
-                       << " name=" << (usb_interface.friendly_name.empty() ? "unknown" : usb_interface.friendly_name) << "\n";
+                      << " name=" << (usb_interface.friendly_name.empty() ? "unknown" : usb_interface.friendly_name)
+                      << "\n";
         }
         std::cout << "Protocol evidence (observation only):\n";
         for (const auto& evidence : platform::protocol_evidence_for(device)) {
             std::cout << "  protocol=" << core::to_string(evidence.protocol)
-                      << " level=" << core::to_string(evidence.level)
-                      << " access=unverified"
+                      << " level=" << core::to_string(evidence.level) << " access=unverified"
                       << " source=" << evidence.source << "\n";
         }
     }
-    std::cout << "\nMIDI endpoints (" << platform::to_string(midi->maturity()) << "): " << midi_endpoints.size() << "\n";
+    std::cout << "\nMIDI endpoints (" << platform::to_string(midi->maturity()) << "): " << midi_endpoints.size()
+              << "\n";
     for (const auto& endpoint : midi_endpoints) {
-        std::cout << "  [" << platform::to_string(endpoint.direction) << "] " << endpoint.name
-                  << " id=" << endpoint.id << " protocol=" << endpoint.protocol
-                  << " backend=" << endpoint.backend << "\n";
+        std::cout << "  [" << platform::to_string(endpoint.direction) << "] " << endpoint.name << " id=" << endpoint.id
+                  << " protocol=" << endpoint.protocol << " backend=" << endpoint.backend << "\n";
     }
     if (probe_access) {
         std::cout << "\nMIDI non-destructive open/close access probe:\n";
         for (const auto& endpoint : midi_endpoints) {
             const bool opened = endpoint.direction == platform::EndpointDirection::input
-                ? midi->open_input(endpoint.id, [](const platform::MidiMessage&) {})
-                : midi->open_output(endpoint.id);
+                                    ? midi->open_input(endpoint.id, [](const platform::MidiMessage&) {})
+                                    : midi->open_output(endpoint.id);
             std::cout << "  [" << platform::to_string(endpoint.direction) << "] " << endpoint.name
                       << " access=" << (opened ? "opened" : "unavailable_or_busy") << "\n";
             if (opened) midi->close(endpoint.id);
         }
         std::cout << "No MIDI messages were sent. All successfully opened endpoints were closed.\n";
     }
-    std::cout << "\nAudio endpoints (" << platform::to_string(audio->maturity()) << "): " << audio_endpoints.size() << "\n";
+    std::cout << "\nAudio endpoints (" << platform::to_string(audio->maturity()) << "): " << audio_endpoints.size()
+              << "\n";
     for (const auto& endpoint : audio_endpoints) {
-        std::cout << "  [" << platform::to_string(endpoint.direction) << "] " << endpoint.name
-                  << " id=" << endpoint.id << " state=" << (endpoint.active ? "active" : "inactive")
-                  << " mix-format=" << endpoint.channels << "ch/" << endpoint.sample_rate << "Hz/"
-                  << endpoint.bits_per_sample << "bit\n";
+        std::cout << "  [" << platform::to_string(endpoint.direction) << "] " << endpoint.name << " id=" << endpoint.id
+                  << " state=" << (endpoint.active ? "active" : "inactive") << " mix-format=" << endpoint.channels
+                  << "ch/" << endpoint.sample_rate << "Hz/" << endpoint.bits_per_sample << "bit\n";
     }
     if (probe_audio) {
         std::cout << "\nAudio receive-only signal probe (400 ms per active input):\n";
@@ -1058,51 +1171,117 @@ void list_devices(bool probe_access = false, bool probe_audio = false) {
             if (endpoint.direction != platform::EndpointDirection::input) continue;
             const auto probe = audio->probe_input(endpoint.id, 400);
             std::cout << "  " << endpoint.name << " access=" << (probe.opened ? "opened" : "unavailable_or_busy")
-                      << " frames=" << probe.frames_observed << " peak=" << probe.peak
-                      << " status=" << probe.status << "\n";
+                      << " frames=" << probe.frames_observed << " peak=" << probe.peak << " status=" << probe.status
+                      << "\n";
         }
         std::cout << "No audio was retained or written. Every opened capture client was stopped and closed.\n";
     }
-    std::cout << "\nNo interfaces were opened during enumeration. Enumeration does not qualify live MIDI, audio capture, synchronization, storage, or proprietary control.\n";
+    std::cout << "\nNo interfaces were opened during enumeration. Enumeration does not qualify live MIDI, audio "
+                 "capture, synchronization, storage, or proprietary control.\n";
 }
 
 void monitor_midi(std::string_view requested_name, int seconds) {
     auto midi = platform::make_system_midi_backend();
     const auto endpoints = midi->enumerate_endpoints();
-    const auto found = std::find_if(endpoints.begin(), endpoints.end(), [requested_name](const platform::MidiEndpoint& endpoint) {
-        return endpoint.direction == platform::EndpointDirection::input && lower(endpoint.name) == lower(std::string(requested_name));
-    });
-    if (found == endpoints.end()) throw std::runtime_error("No MIDI input endpoint named '" + std::string(requested_name) + "' is currently available.");
+    const auto found =
+        std::find_if(endpoints.begin(), endpoints.end(), [requested_name](const platform::MidiEndpoint& endpoint) {
+            return endpoint.direction == platform::EndpointDirection::input &&
+                   lower(endpoint.name) == lower(std::string(requested_name));
+        });
+    if (found == endpoints.end())
+        throw std::runtime_error("No MIDI input endpoint named '" + std::string(requested_name) +
+                                 "' is currently available.");
     std::atomic<std::uint64_t> count{0};
     const bool opened = midi->open_input(found->id, [&count](const platform::MidiMessage& message) {
         ++count;
         const auto semantic = platform::midi_message_semantic(message.bytes);
         std::cout << "MIDI timestamp_us=" << message.timestamp_microseconds << " semantic=" << semantic << " bytes=";
-        for (const auto byte : message.bytes) std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<unsigned int>(byte) << ' ';
+        for (const auto byte : message.bytes)
+            std::cout << std::hex << std::setw(2) << std::setfill('0') << static_cast<unsigned int>(byte) << ' ';
         std::cout << std::dec << "\n";
     });
     if (!opened) throw std::runtime_error("MIDI input '" + found->name + "' is busy or could not be opened.");
-    std::cout << "Monitoring receive-only MIDI input '" << found->name << "' for " << seconds << " seconds. No MIDI will be sent.\n";
+    std::cout << "Monitoring receive-only MIDI input '" << found->name << "' for " << seconds
+              << " seconds. No MIDI will be sent.\n";
     std::this_thread::sleep_for(std::chrono::seconds(seconds));
     midi->close(found->id);
     std::cout << "MIDI monitor complete. Messages received: " << count.load() << ". Endpoint closed.\n";
 }
 
+void capture_audio_smoke(std::string_view requested_name, int duration_ms) {
+    auto audio = platform::make_system_audio_backend();
+    const auto endpoints = audio->enumerate_endpoints();
+    const auto found =
+        std::find_if(endpoints.begin(), endpoints.end(), [requested_name](const platform::AudioEndpoint& endpoint) {
+            return endpoint.direction == platform::EndpointDirection::input &&
+                   lower(endpoint.name) == lower(std::string(requested_name));
+        });
+    if (found == endpoints.end())
+        throw std::runtime_error("No active audio input endpoint named '" + std::string(requested_name) +
+                                 "' is currently available.");
+    if (!audio->begin_capture(found->id, static_cast<int>(found->sample_rate), static_cast<int>(found->channels))) {
+        const auto status = audio->capture_status();
+        throw std::runtime_error("Audio input '" + found->name + "' could not start in its native mix format; state=" +
+                                 platform::to_string(status.state));
+    }
+
+    std::array<float, 4096> buffer{};
+    std::uint64_t samples_read = 0;
+    float peak = 0.0F;
+    const auto deadline = std::chrono::steady_clock::now() + std::chrono::milliseconds(duration_ms);
+    while (std::chrono::steady_clock::now() < deadline) {
+        const auto count = audio->read_capture(buffer);
+        samples_read += count;
+        for (std::size_t index = 0; index < count; ++index)
+            peak = (std::max)(peak, std::abs(buffer[index]));
+        std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    audio->stop_capture();
+    for (;;) {
+        const auto count = audio->read_capture(buffer);
+        if (count == 0) break;
+        samples_read += count;
+        for (std::size_t index = 0; index < count; ++index)
+            peak = (std::max)(peak, std::abs(buffer[index]));
+    }
+    const auto status = audio->capture_status();
+    if (status.frames_captured == 0) throw std::runtime_error("The audio capture opened but returned no frames.");
+    std::cout << "Bounded WASAPI streaming capture completed\n"
+              << "Endpoint: " << found->name << "\n"
+              << "Format: " << status.channels << "ch/" << status.sample_rate << "Hz/" << status.bits_per_sample
+              << "bit\n"
+              << "Duration requested: " << duration_ms << " ms\n"
+              << "Frames captured: " << status.frames_captured << "\n"
+              << "Samples read: " << samples_read << "\n"
+              << "Peak: " << peak << "\n"
+              << "Samples dropped: " << status.samples_dropped << "\n"
+              << "Discontinuities: " << status.discontinuities << "\n"
+              << "Final state: " << platform::to_string(status.state) << "\n"
+              << "No audio was written to disk or retained after process exit. Endpoint closed.\n";
+}
+
 void send_test_note(std::string_view requested_name, int note, int velocity, int duration_ms) {
     auto midi = platform::make_system_midi_backend();
     const auto endpoints = midi->enumerate_endpoints();
-    const auto found = std::find_if(endpoints.begin(), endpoints.end(), [requested_name](const platform::MidiEndpoint& endpoint) {
-        return endpoint.direction == platform::EndpointDirection::output && lower(endpoint.name) == lower(std::string(requested_name));
-    });
-    if (found == endpoints.end()) throw std::runtime_error("No MIDI output endpoint named '" + std::string(requested_name) + "' is currently available.");
-    if (!midi->open_output(found->id)) throw std::runtime_error("MIDI output '" + found->name + "' is busy or could not be opened.");
-    const std::array<std::uint8_t, 3> note_on{0x90U, static_cast<std::uint8_t>(note), static_cast<std::uint8_t>(velocity)};
+    const auto found =
+        std::find_if(endpoints.begin(), endpoints.end(), [requested_name](const platform::MidiEndpoint& endpoint) {
+            return endpoint.direction == platform::EndpointDirection::output &&
+                   lower(endpoint.name) == lower(std::string(requested_name));
+        });
+    if (found == endpoints.end())
+        throw std::runtime_error("No MIDI output endpoint named '" + std::string(requested_name) +
+                                 "' is currently available.");
+    if (!midi->open_output(found->id))
+        throw std::runtime_error("MIDI output '" + found->name + "' is busy or could not be opened.");
+    const std::array<std::uint8_t, 3> note_on{0x90U, static_cast<std::uint8_t>(note),
+                                              static_cast<std::uint8_t>(velocity)};
     const std::array<std::uint8_t, 3> note_off{0x80U, static_cast<std::uint8_t>(note), 0U};
     const bool started = midi->send(found->id, note_on);
     std::this_thread::sleep_for(std::chrono::milliseconds(duration_ms));
     const bool stopped = midi->send(found->id, note_off);
     midi->close(found->id);
-    if (!started || !stopped) throw std::runtime_error("The bounded MIDI note test did not complete; the endpoint was closed.");
+    if (!started || !stopped)
+        throw std::runtime_error("The bounded MIDI note test did not complete; the endpoint was closed.");
     std::cout << "Sent one bounded standard MIDI note to '" << found->name << "': channel=1 note=" << note
               << " velocity=" << velocity << " duration_ms=" << duration_ms
               << ". Note Off sent; endpoint closed. No SysEx or vendor command was sent.\n";
@@ -1111,11 +1290,16 @@ void send_test_note(std::string_view requested_name, int note, int velocity, int
 void send_transport_test(std::string_view requested_name, int bpm, int beats) {
     auto midi = platform::make_system_midi_backend();
     const auto endpoints = midi->enumerate_endpoints();
-    const auto found = std::find_if(endpoints.begin(), endpoints.end(), [requested_name](const platform::MidiEndpoint& endpoint) {
-        return endpoint.direction == platform::EndpointDirection::output && lower(endpoint.name) == lower(std::string(requested_name));
-    });
-    if (found == endpoints.end()) throw std::runtime_error("No MIDI output endpoint named '" + std::string(requested_name) + "' is currently available.");
-    if (!midi->open_output(found->id)) throw std::runtime_error("MIDI output '" + found->name + "' is busy or could not be opened.");
+    const auto found =
+        std::find_if(endpoints.begin(), endpoints.end(), [requested_name](const platform::MidiEndpoint& endpoint) {
+            return endpoint.direction == platform::EndpointDirection::output &&
+                   lower(endpoint.name) == lower(std::string(requested_name));
+        });
+    if (found == endpoints.end())
+        throw std::runtime_error("No MIDI output endpoint named '" + std::string(requested_name) +
+                                 "' is currently available.");
+    if (!midi->open_output(found->id))
+        throw std::runtime_error("MIDI output '" + found->name + "' is busy or could not be opened.");
 
     const std::array<std::uint8_t, 1> start{0xfaU};
     const std::array<std::uint8_t, 1> clock{0xf8U};
@@ -1130,22 +1314,29 @@ void send_transport_test(std::string_view requested_name, int bpm, int beats) {
     }
     const bool stopped = midi->send(found->id, stop);
     midi->close(found->id);
-    if (!successful || !stopped) throw std::runtime_error("The bounded MIDI transport test did not complete; MIDI Stop was attempted and the endpoint was closed.");
+    if (!successful || !stopped)
+        throw std::runtime_error(
+            "The bounded MIDI transport test did not complete; MIDI Stop was attempted and the endpoint was closed.");
     std::cout << "Sent bounded standard MIDI transport to '" << found->name << "': Start, " << beats * 24
-              << " Clock pulses at " << bpm << " BPM, then Stop. Endpoint closed. No SysEx or vendor command was sent.\n";
+              << " Clock pulses at " << bpm
+              << " BPM, then Stop. Endpoint closed. No SysEx or vendor command was sent.\n";
 }
 
 } // namespace ubridge
 
 int main(int argc, char* argv[]) {
     try {
-        if (argc == 1 || (argc == 2 && (std::string_view(argv[1]) == "--help" || std::string_view(argv[1]) == "help"))) {
+        if (argc == 1 ||
+            (argc == 2 && (std::string_view(argv[1]) == "--help" || std::string_view(argv[1]) == "help"))) {
             std::cout << ubridge::usage();
             return 0;
         }
         if (argc >= 2 && std::string_view(argv[1]) == "devices") {
-            if (argc == 2 || (argc == 3 && (std::string_view(argv[2]) == "--help" || std::string_view(argv[2]) == "--probe-access" || std::string_view(argv[2]) == "--probe-audio"))) {
-                if (argc == 2 || std::string_view(argv[2]) == "--probe-access" || std::string_view(argv[2]) == "--probe-audio") {
+            if (argc == 2 ||
+                (argc == 3 && (std::string_view(argv[2]) == "--help" || std::string_view(argv[2]) == "--probe-access" ||
+                               std::string_view(argv[2]) == "--probe-audio"))) {
+                if (argc == 2 || std::string_view(argv[2]) == "--probe-access" ||
+                    std::string_view(argv[2]) == "--probe-audio") {
                     ubridge::list_devices(argc == 3 && std::string_view(argv[2]) == "--probe-access",
                                           argc == 3 && std::string_view(argv[2]) == "--probe-audio");
                 } else {
@@ -1155,33 +1346,45 @@ int main(int argc, char* argv[]) {
             }
         }
         if (argc >= 2 && std::string_view(argv[1]) == "xpj-import") {
-            fs::path project; fs::path output;
+            fs::path project;
+            fs::path output;
             for (int index = 2; index < argc; ++index) {
                 const std::string argument = argv[index];
-                if (argument == "--project" && index + 1 < argc) project = argv[++index];
-                else if (argument == "--output" && index + 1 < argc) output = argv[++index];
-                else throw std::runtime_error("Unknown xpj-import option: " + argument + "\n\n" + ubridge::usage());
+                if (argument == "--project" && index + 1 < argc)
+                    project = argv[++index];
+                else if (argument == "--output" && index + 1 < argc)
+                    output = argv[++index];
+                else
+                    throw std::runtime_error("Unknown xpj-import option: " + argument + "\n\n" + ubridge::usage());
             }
-            if (project.empty() || output.empty()) throw std::runtime_error("xpj-import requires --project and --output.");
+            if (project.empty() || output.empty())
+                throw std::runtime_error("xpj-import requires --project and --output.");
             std::error_code equivalent_error;
-            if (fs::equivalent(project.parent_path(), output, equivalent_error) && !equivalent_error) throw std::runtime_error("Import output must not be the source project folder.");
+            if (fs::equivalent(project.parent_path(), output, equivalent_error) && !equivalent_error)
+                throw std::runtime_error("Import output must not be the source project folder.");
             const auto imported = ubridge::mpc::import_xpj(project);
-            if (!imported.valid) throw std::runtime_error("XPJ canonical translation reported validation errors; no output was written.");
+            if (!imported.valid)
+                throw std::runtime_error(
+                    "XPJ canonical translation reported validation errors; no output was written.");
             fs::create_directories(output);
             ubridge::write_text(output / "session.ubridge.json", ubridge::mpc::serialize_import_json(imported));
             std::cout << "MPC XPJ imported into immutable hardware branch\nTracks: " << imported.session.tracks.size()
-                      << "\nPrograms: " << imported.session.programs.size() << "\nAssigned pads: " << imported.session.pads.size()
-                      << "\nSlices: " << imported.session.slices.size() << "\nSequences: " << imported.session.sequences.size()
-                      << "\nPopulated songs: " << imported.session.songs.size() << "\nOutput: " << (output / "session.ubridge.json").string()
-                      << "\nXPJ write-back: disabled\n";
+                      << "\nPrograms: " << imported.session.programs.size()
+                      << "\nAssigned pads: " << imported.session.pads.size()
+                      << "\nSlices: " << imported.session.slices.size()
+                      << "\nSequences: " << imported.session.sequences.size()
+                      << "\nPopulated songs: " << imported.session.songs.size()
+                      << "\nOutput: " << (output / "session.ubridge.json").string() << "\nXPJ write-back: disabled\n";
             return 0;
         }
         if (argc >= 2 && std::string_view(argv[1]) == "xpj-inspect") {
             fs::path project;
             for (int index = 2; index < argc; ++index) {
                 const std::string argument = argv[index];
-                if (argument == "--project" && index + 1 < argc) project = argv[++index];
-                else throw std::runtime_error("Unknown xpj-inspect option: " + argument + "\n\n" + ubridge::usage());
+                if (argument == "--project" && index + 1 < argc)
+                    project = argv[++index];
+                else
+                    throw std::runtime_error("Unknown xpj-inspect option: " + argument + "\n\n" + ubridge::usage());
             }
             if (project.empty()) throw std::runtime_error("xpj-inspect requires --project <working-copy.xpj>.");
             const auto report = ubridge::mpc::inspect_xpj(project);
@@ -1189,48 +1392,92 @@ int main(int argc, char* argv[]) {
                       << "\nGzip container: " << (report.gzip_container ? "yes" : "no")
                       << "\nJSON payload: " << (report.json_payload ? "yes" : "no")
                       << "\nSchema version: " << report.schema_version << "\nMaster tempo: " << report.master_tempo
-                      << "\nSamples: " << report.sample_count << " (resolved " << report.available_asset_count << ", missing " << report.missing_asset_count << ")"
+                      << "\nSamples: " << report.sample_count << " (resolved " << report.available_asset_count
+                      << ", missing " << report.missing_asset_count << ")"
                       << "\nTracks: " << report.track_count << "\nSequences: " << report.sequence_count
                       << "\nSong slots: " << report.song_slot_count << "\nSource changes: none\n";
-            for (const auto& diagnostic : report.diagnostics) std::cout << "[" << diagnostic.code << "] " << diagnostic.message << "\n";
+            for (const auto& diagnostic : report.diagnostics)
+                std::cout << "[" << diagnostic.code << "] " << diagnostic.message << "\n";
             return report.json_payload ? 0 : 1;
         }
-        if (argc >= 2 && std::string_view(argv[1]) == "midi-monitor") {
-            std::string name; int seconds = 10;
+        if (argc >= 2 && std::string_view(argv[1]) == "audio-capture-smoke") {
+            std::string name;
+            int duration_ms = 1'000;
             for (int index = 2; index < argc; ++index) {
                 const std::string argument = argv[index];
-                if (argument == "--name" && index + 1 < argc) name = argv[++index];
-                else if (argument == "--seconds" && index + 1 < argc) seconds = std::stoi(argv[++index]);
-                else throw std::runtime_error("Unknown midi-monitor option: " + argument + "\n\n" + ubridge::usage());
+                if (argument == "--name" && index + 1 < argc)
+                    name = argv[++index];
+                else if (argument == "--duration-ms" && index + 1 < argc)
+                    duration_ms = std::stoi(argv[++index]);
+                else
+                    throw std::runtime_error("Unknown audio-capture-smoke option: " + argument + "\n\n" +
+                                             ubridge::usage());
             }
-            if (name.empty() || seconds < 1 || seconds > 30) throw std::runtime_error("midi-monitor requires --name and --seconds between 1 and 30.");
+            if (name.empty() || duration_ms < 100 || duration_ms > 10'000) {
+                throw std::runtime_error(
+                    "audio-capture-smoke requires --name and --duration-ms between 100 and 10000.");
+            }
+            ubridge::capture_audio_smoke(name, duration_ms);
+            return 0;
+        }
+        if (argc >= 2 && std::string_view(argv[1]) == "midi-monitor") {
+            std::string name;
+            int seconds = 10;
+            for (int index = 2; index < argc; ++index) {
+                const std::string argument = argv[index];
+                if (argument == "--name" && index + 1 < argc)
+                    name = argv[++index];
+                else if (argument == "--seconds" && index + 1 < argc)
+                    seconds = std::stoi(argv[++index]);
+                else
+                    throw std::runtime_error("Unknown midi-monitor option: " + argument + "\n\n" + ubridge::usage());
+            }
+            if (name.empty() || seconds < 1 || seconds > 30)
+                throw std::runtime_error("midi-monitor requires --name and --seconds between 1 and 30.");
             ubridge::monitor_midi(name, seconds);
             return 0;
         }
         if (argc >= 2 && std::string_view(argv[1]) == "midi-send-note") {
-            std::string name; int note = -1; int velocity = -1; int duration_ms = 100;
+            std::string name;
+            int note = -1;
+            int velocity = -1;
+            int duration_ms = 100;
             for (int index = 2; index < argc; ++index) {
                 const std::string argument = argv[index];
-                if (argument == "--name" && index + 1 < argc) name = argv[++index];
-                else if (argument == "--note" && index + 1 < argc) note = std::stoi(argv[++index]);
-                else if (argument == "--velocity" && index + 1 < argc) velocity = std::stoi(argv[++index]);
-                else if (argument == "--duration-ms" && index + 1 < argc) duration_ms = std::stoi(argv[++index]);
-                else throw std::runtime_error("Unknown midi-send-note option: " + argument + "\n\n" + ubridge::usage());
+                if (argument == "--name" && index + 1 < argc)
+                    name = argv[++index];
+                else if (argument == "--note" && index + 1 < argc)
+                    note = std::stoi(argv[++index]);
+                else if (argument == "--velocity" && index + 1 < argc)
+                    velocity = std::stoi(argv[++index]);
+                else if (argument == "--duration-ms" && index + 1 < argc)
+                    duration_ms = std::stoi(argv[++index]);
+                else
+                    throw std::runtime_error("Unknown midi-send-note option: " + argument + "\n\n" + ubridge::usage());
             }
-            if (name.empty() || note < 0 || note > 127 || velocity < 1 || velocity > 127 || duration_ms < 20 || duration_ms > 2000) {
-                throw std::runtime_error("midi-send-note requires --name, --note 0-127, --velocity 1-127, and --duration-ms 20-2000.");
+            if (name.empty() || note < 0 || note > 127 || velocity < 1 || velocity > 127 || duration_ms < 20 ||
+                duration_ms > 2000) {
+                throw std::runtime_error(
+                    "midi-send-note requires --name, --note 0-127, --velocity 1-127, and --duration-ms 20-2000.");
             }
             ubridge::send_test_note(name, note, velocity, duration_ms);
             return 0;
         }
         if (argc >= 2 && std::string_view(argv[1]) == "midi-send-transport") {
-            std::string name; int bpm = 120; int beats = 4;
+            std::string name;
+            int bpm = 120;
+            int beats = 4;
             for (int index = 2; index < argc; ++index) {
                 const std::string argument = argv[index];
-                if (argument == "--name" && index + 1 < argc) name = argv[++index];
-                else if (argument == "--bpm" && index + 1 < argc) bpm = std::stoi(argv[++index]);
-                else if (argument == "--beats" && index + 1 < argc) beats = std::stoi(argv[++index]);
-                else throw std::runtime_error("Unknown midi-send-transport option: " + argument + "\n\n" + ubridge::usage());
+                if (argument == "--name" && index + 1 < argc)
+                    name = argv[++index];
+                else if (argument == "--bpm" && index + 1 < argc)
+                    bpm = std::stoi(argv[++index]);
+                else if (argument == "--beats" && index + 1 < argc)
+                    beats = std::stoi(argv[++index]);
+                else
+                    throw std::runtime_error("Unknown midi-send-transport option: " + argument + "\n\n" +
+                                             ubridge::usage());
             }
             if (name.empty() || bpm < 30 || bpm > 300 || beats < 1 || beats > 16) {
                 throw std::runtime_error("midi-send-transport requires --name, --bpm 30-300, and --beats 1-16.");
@@ -1259,13 +1506,15 @@ int main(int argc, char* argv[]) {
                 }
             }
             if (!ubridge::valid_device(device)) {
-                throw std::runtime_error("Supported hardware device profiles are: " + ubridge::supported_device_list() + ".");
+                throw std::runtime_error("Supported hardware device profiles are: " + ubridge::supported_device_list() +
+                                         ".");
             }
             if (!ubridge::valid_daw(daw)) {
                 throw std::runtime_error("Supported DAW targets are: " + ubridge::supported_daw_list() + ".");
             }
             if (!ubridge::valid_platform(platform)) {
-                throw std::runtime_error("Supported target operating systems are windows, macos, linux, android, chromeos, ipados, and ios.");
+                throw std::runtime_error("Supported target operating systems are windows, macos, linux, android, "
+                                         "chromeos, ipados, and ios.");
             }
             std::cout << ubridge::platform_runtime_route_manifest(platform, device, daw);
             return 0;
