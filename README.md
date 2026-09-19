@@ -7,7 +7,7 @@
 **Hard-coded platform profiles:** Windows, macOS, Linux, Android, ChromeOS, iPadOS, and iOS  
 **Design posture:** local-first, source-project safe, capability-aware
 
-Universal Hardware Session Bridge is the beginning of a cross-manufacturer bridge between music hardware and DAWs. It is deliberately **not** presented as a finished MPC controller, stem recorder, DAW-project writer, or live two-way synchronizer. The working prototype builds the foundation required for those capabilities: it inventories a project folder, creates a versioned neutral session, backs up the source outside the source directory, produces an auditable audio/MIDI exchange package, and makes every current limitation explicit.
+Universal Hardware Session Bridge is the beginning of a cross-manufacturer bridge between music hardware and DAWs. It is deliberately **not** presented as a finished MPC controller, stem recorder, DAW-project writer, or live two-way synchronizer. The working prototype combines safe project intake with an experimental Windows hardware slice: read-only MPC XPJ translation, device/MIDI/audio diagnostics, canonical hardware/DAW branch plans, and bounded physical test tools. Every capability remains tied to its exact evidence level.
 
 > The bridge never writes into the selected source project folder. It writes outputs, backups, manifests, and exchange files only to the destination folder you choose.
 
@@ -30,12 +30,18 @@ The `ubridge` command accepts a complete project folder and a target of **Cubase
 | Timing/drift calculations, stem validation, MIDI route checks, controller scaling, mixer/automation plans | Implemented and fixture-tested |
 | Profile validation, compatibility report, workflow/archive/report serialization, and local service safe mode | Implemented and fixture-tested |
 | Direct Cubase/Reason project-file generation | Intentionally unavailable |
-| Proprietary MPC project parsing | Intentionally unavailable |
-| Read-only Windows USB identity discovery | Experimental inventory for observed MPC Sample `VID 09E8` / `PID 205C`; no interface is opened |
-| Live audio capture, MIDI routing, device control, or protocol integration | Architectural interfaces/scaffolding only; not implemented or qualified |
-| Hardware write-back or live two-way parameter synchronization | Intentionally unavailable |
+| MPC XPJ project parsing | Partial, read-only working-copy importer; tested against one real certification project; no writer or lossless claim |
+| Read-only Windows USB identity discovery | Experimental inventory for observed MPC Sample `VID 09E8` / `PID 205C`, grouped by shared container/interface records |
+| Windows MIDI | Experimental WinMM endpoint enumeration, receive, bounded standard send and semantic decoding; exact recorded MPC directions have hardware evidence |
+| Windows audio | Endpoint enumeration, bounded receive-only probes, and experimental event-driven shared-mode WASAPI capture into a fixed real-time queue; recording/placement is unavailable |
+| MPC/DAW branches and merge | In-memory merge planning plus a crash-recoverable versioned canonical-session snapshot store; this is not yet a distributed commit graph |
+| Desired/observed state, acknowledgement, clocks, recording selection and Hardware Learn | Core contracts plus qualified-mapping validation and write-intent planning; no real MPC mapping or DAW relay is enabled |
+| Background service | Persistent per-user named-pipe service with current-user ACL, DPAPI-protected credential, protocol negotiation, bounded frames, durable status and clean/unclean restart evidence |
+| Windows MIDI mediation core | Fixed-capacity routing queues, explicit clock/transport authorities, direction gates, echo suppression, rate limiting, queue saturation and synthetic concurrent stress coverage |
+| Experimental VST3 client | Optional audio-transparent component/controller target; passes the Steinberg 3.8.1 validator but is unsigned and has no live service or host-certified integration |
+| Hardware project write-back and live two-way parameter synchronization | Intentionally unavailable until their separate qualification gates pass |
 
-The prototype uses a transparent exchange-package fallback because VST3 is a plug-in interface for real-time audio components rather than a universal permission to create proprietary DAW project files. VST3 also exposes host-dependent optional interfaces, so each host integration must be verified before it is enabled.[1] Reason supports VST3 plug-ins in its standalone music-making software, making a shared VST3 client a practical future evaluation path, but that does not by itself establish project-writing or full session-control capability.[2]
+The prototype uses a transparent exchange-package fallback because VST3 is a plug-in interface for real-time audio components rather than a universal permission to create proprietary DAW project files. The repository now contains an optional thin VST3 client and a pinned-SDK CI route, but each host integration must still be verified before it is enabled.[1] Reason supports VST3 plug-ins in its standalone music-making software, making the shared client a practical evaluation path, but that does not by itself establish project-writing or full session-control capability.[2]
 
 ## Repository layout
 
@@ -43,7 +49,11 @@ The prototype uses a transparent exchange-package fallback because VST3 is a plu
 universal-bridge/
 ├── CMakeLists.txt                 # Portable C++20 build
 ├── src/main.cpp                   # Safe preflight and exchange-bundle implementation
+├── src/plugins/vst3/              # Optional experimental, audio-transparent VST3 client
 ├── profiles/                      # Device and DAW capability declarations
+├── release/release-gates.json     # Machine-checked commercial release decision record
+├── evidence/                      # Scope-limited physical/toolchain observations
+├── research/                      # Abstract-only research intake and local catalog schema
 ├── fixtures/mpc_sample_demo/      # Sanitized regression fixture; not a real MPC project
 ├── tests/validate_outputs.py      # Deterministic safety/output checks
 ├── examples/Run-UniversalBridge.ps1
@@ -83,6 +93,24 @@ cmake --build --preset release --target package
   --daw cubase `
   --target-os windows `
   --output "D:\Music\Bridge Output\My Beat"
+```
+
+The standard ZIP and optional WiX MSI are pre-release artifacts. The MSI route is per-user and its
+install/repair/uninstall lifecycle has been exercised locally, but it is not code-signed and is not
+approved for commercial distribution. See [`packaging/windows/README.md`](packaging/windows/README.md).
+
+The VST3 client is deliberately excluded from normal builds. Obtain and review the Steinberg SDK
+separately, keep it outside tracked source, then explicitly configure the experimental target. The
+validated reference revision is `v3.8.1_build_84`; this is a build/validator gate, not host certification.
+
+```powershell
+git clone --branch v3.8.1_build_84 --depth 1 --recurse-submodules --shallow-submodules `
+  https://github.com/steinbergmedia/vst3sdk.git build/vendor/vst3sdk
+cmake -S . -B build/vst3-msvc -G "Visual Studio 18 2026" -A x64 `
+  -DUBRIDGE_BUILD_VST3_CLIENT=ON `
+  -DUBRIDGE_VST3_SDK_ROOT="$pwd/build/vendor/vst3sdk" `
+  -DUBRIDGE_WARNINGS_AS_ERRORS=ON
+cmake --build build/vst3-msvc --config Release --target UniversalBridgeVST3 --parallel 4
 ```
 
 On macOS or Linux, the portable command-line core can be built using CMake and a C++20 compiler. That establishes developer portability only; it does **not** certify hardware, DAW, audio, MIDI, plug-in, or packaging support on those platforms.
@@ -130,7 +158,7 @@ This model now has hard-coded profiles for Windows, macOS, Linux, Android, Chrom
 
 The bridge is designed to earn trust before it attempts deeper synchronization. The source project folder is treated as immutable. The command refuses an output folder inside the source directory, prevents accidental recursive backups, creates an external backup by default, and records whether backup creation succeeded. It does not use undocumented device protocols, does not send commands to hardware, and does not modify DAW project files.
 
-The current fingerprints use FNV-1a 64-bit values to detect ordinary fixture and file changes efficiently. They are **not cryptographic integrity proofs**. Before production synchronization, this implementation must move to a cryptographic hash (such as SHA-256 or BLAKE3), persistent transaction journals, source/destination revision vectors, cancellation recovery, and independently testable conflict-resolution policies.
+Some current fingerprints and the durable-session envelope use FNV-1a 64-bit values to detect ordinary fixture/file corruption efficiently. They are **not cryptographic integrity or authenticity proofs**. Authenticated service credentials use Windows cryptographic randomness and DPAPI instead. Before production synchronization, content identity must move to a cryptographic hash (such as SHA-256 or BLAKE3), with source/destination revision vectors, cancellation recovery, and independently testable conflict-resolution policies.
 
 ## Testing
 
@@ -159,21 +187,26 @@ cmake --build --preset msvc-release --target package
 
 VS Code uses `CMakePresets.json` through the recommended Microsoft CMake Tools and C/C++ extensions. Select `msvc-dev` when validating the Microsoft toolchain, or `dev` for the portable Ninja developer path. The repository does not require SQL Server or SQL Server Management Studio.
 
-A passing test suite confirms prototype behavior only. It does not prove compatibility with a physical MPC Sample, a particular MPC firmware version, Cubase or Reason edition, audio interface, USB hub, operating-system driver, or DAW plug-in host configuration.
+A passing test suite confirms prototype behavior only. The deterministic stress target covers two million concurrent queue transfers and 250,000 synthetic mediated MIDI messages, but it is not a physical endpoint or long-duration soak. The optional VST3 target separately passes Steinberg's validator. None of this proves compatibility with a particular MPC firmware, Cubase or Reason edition, audio interface, USB hub, operating-system driver, or complete DAW session.
 
 ## Operating-system profiles
 
 | Target OS | Hard-coded state | Current behavior |
 |---|---|---|
-| Windows | `reference_desktop` | Reference preflight/exchange workflow; physical hardware service still disabled in this prototype |
+| Windows | `reference_desktop` | Preflight/exchange, partial XPJ intake, experimental WinMM/WASAPI streaming, authenticated local IPC, and an optional validator-passing VST3 client; complete live mediation remains disabled |
 | macOS, Linux | `portable_core_target` | Preflight/exchange capability record; hardware, audio/MIDI, plug-in, and DAW routes remain unqualified |
 | Android, ChromeOS, iPadOS, iOS | `future_mobile_host` | Mobile/tablet bridge and companion pathway recorded; no native mobile executable or direct DAW/hardware integration is enabled |
 
 See [`docs/PLATFORM_CONTRACT.md`](docs/PLATFORM_CONTRACT.md) for the full platform contract and [`docs/CAPABILITY_MATRIX.md`](docs/CAPABILITY_MATRIX.md) for the release gates.
 
+The ten commercial release gates, exact current evidence and remaining exit criteria are maintained in
+[`docs/COMMERCIAL_RELEASE_GATES.md`](docs/COMMERCIAL_RELEASE_GATES.md) and machine-checked from
+[`release/release-gates.json`](release/release-gates.json). `python tools/check_release_readiness.py
+--release` intentionally fails while any gate is not `ready`.
+
 ## Complete specification coverage
 
-The complete supplied specification is now converted into a buildable program of work. The safely implementable offline modules have been added in v0.4.0; see [`docs/V0_4_IMPLEMENTED_FOUNDATION.md`](docs/V0_4_IMPLEMENTED_FOUNDATION.md) for the exact implementation/test status and the features that remain consciously gated. Read [`docs/MASTER_REQUIREMENTS_MATRIX.md`](docs/MASTER_REQUIREMENTS_MATRIX.md) for all **100 requirements**, including the responsible engine, delivery stage, current coverage, dependency, and acceptance gate. Read [`docs/BUILDABLE_ARCHITECTURE.md`](docs/BUILDABLE_ARCHITECTURE.md) for the shared C++ core, adapter, platform-service, virtual-device, and workflow structure. Read [`docs/DELIVERY_ROADMAP_AND_GATES.md`](docs/DELIVERY_ROADMAP_AND_GATES.md) for the release order, technical/legal gates, platform implementation path, and v1.0 acceptance scenario.
+The complete supplied specification is converted into a buildable program of work. The safely implementable offline modules began in v0.4.0; see [`docs/V0_4_IMPLEMENTED_FOUNDATION.md`](docs/V0_4_IMPLEMENTED_FOUNDATION.md) for that historical boundary and [`docs/PRODUCTION_STATUS.md`](docs/PRODUCTION_STATUS.md) for current truth. Read [`docs/MASTER_REQUIREMENTS_MATRIX.md`](docs/MASTER_REQUIREMENTS_MATRIX.md) for all **100 requirements**, including the responsible engine, delivery stage, current coverage, dependency, and acceptance gate. Read [`docs/POIETEK_PROJECT_ABSTRACTION.md`](docs/POIETEK_PROJECT_ABSTRACTION.md) for the additive Poietek Project intake, [`docs/BUILDABLE_ARCHITECTURE.md`](docs/BUILDABLE_ARCHITECTURE.md) for the shared C++ core and adapter structure, and [`docs/DELIVERY_ROADMAP_AND_GATES.md`](docs/DELIVERY_ROADMAP_AND_GATES.md) for the release order and v1.0 acceptance scenario.
 
 The repository now compiles a `ubridge_test_lab` executable. It exercises the universal device, DAW, and operating-system profile catalogs; conservative capability negotiation; mobile/desktop safeguards; workflow planning; transaction transitions; and virtual-device disconnect/reconnect behavior without contacting real hardware.
 
@@ -181,10 +214,10 @@ The repository now compiles a `ubridge_test_lab` executable. It exercises the un
 
 | Milestone | Outcome | Release gate |
 |---|---|---|
-| MPC parser feasibility | Read a documented or legally cleared MPC project representation into the neutral session graph | Golden projects parse without modifying sources |
-| Windows hardware service | Real device discovery, MIDI I/O, local IPC, and diagnostics | Tested reconnect and permission behavior on the reference MPC Sample |
+| MPC XPJ importer hardening | Expand the partial read-only adapter without enabling write-back | Fuzzing, versioned golden projects and semantic reopen comparison pass |
+| Windows hardware service | Connect the authenticated service to service-owned physical endpoints and durable live sessions | Tested reconnect, multi-client mediation and permission behavior on the reference MPC Sample |
 | Audio/timing engine | Calibrated stereo capture, offset correction, tail handling, and failure detection | Measured alignment and no real-time audio-thread blocking |
-| Cubase/Reason host adapters | VST3 client and/or documented interchange/direct host actions | Verified per-host capability matrix and reopen persistence |
+| Cubase/Reason host adapters | Connect the validator-passing VST3 client to authenticated non-real-time IPC | Verified per-host automation, crash isolation, capability matrix and reopen persistence |
 | Conflict-aware synchronization | Revision vectors, explicit authority rules, backups, rollback, and user-visible diffs | No silent overwrite across disconnection and cancellation scenarios |
 | macOS/Linux desktop ports | Qualified platform backends and packaging | Platform-specific hardware/DAW regression matrices pass |
 | Android, ChromeOS, iPadOS, and iOS | Companion first, then direct host capabilities where feasible | Device × OS × DAW × connection route is certified separately |
