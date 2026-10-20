@@ -1,0 +1,147 @@
+# =============================================================================
+# BUILD MANIFEST — Universal-Bridge
+# =============================================================================
+# Authoritative record of how this project is built, tested and verified, and
+# of what is still broken. Read by Aetherius-OS's build manifest registry
+# (docs/BUILD-MANIFEST-REGISTRY.yaml) and validated by
+# src/programme/buildManifest.ts.
+# =============================================================================
+schema_version: "1.0.0"
+
+project:
+  id: universal-bridge
+  name: Universal-Bridge
+  kind: application
+  domain: universal-bridge
+  description: >-
+    Capability-aware hardware session bridge foundation. Bridges DAW sessions
+    (MPC/XPJ project format) to local devices, with deterministic offline
+    tests, a per-user local service, and a capability-aware preflight path.
+  repository: true
+  branch: develop/v0.5-production-foundation
+  languages: [cpp, cmake, python]
+
+toolchain:
+  build_system: cmake/ninja
+  package_manager: none
+  requirements:
+    - name: cmake
+      version: ">=3.24"
+      required: true
+      purpose: configure and build
+    - name: ninja
+      version: ">=1.10"
+      required: false
+      purpose: build generator
+    - name: cxx-compiler
+      version: "c++20"
+      required: true
+      purpose: MSVC, Clang-CL or GCC/Clang with C++20 support
+    - name: python
+      version: ">=3.11"
+      required: false
+      purpose: output validation, research catalog and release-gate tests
+    - name: git
+      version: ">=2.30"
+      required: true
+      purpose: FetchContent pulls zlib and nlohmann_json by pinned hash
+
+commands:
+  - name: configure
+    command: cmake -S . -B build -G Ninja
+    working_directory: .
+    timeout_minutes: 20
+  - name: build
+    command: cmake --build build
+    working_directory: .
+    timeout_minutes: 30
+    requires: [configure]
+  - name: test
+    command: ctest --test-dir build --output-on-failure
+    working_directory: .
+    timeout_minutes: 30
+    requires: [build]
+  - name: verify
+    command: cmake -S . -B build -G Ninja && cmake --build build && ctest --test-dir build --output-on-failure
+    working_directory: .
+    timeout_minutes: 60
+    requires: [configure, build, test]
+  - name: clean
+    command: cmake -E remove_directory build
+    working_directory: .
+    timeout_minutes: 5
+
+dependencies:
+  projects: [poietek]
+  external:
+    - zlib (v1.3.2, pinned by SHA256 via FetchContent)
+    - nlohmann_json (v3.12.0, pinned by SHA256 via FetchContent)
+
+status:
+  state: VERIFIED
+  last_verified: "2026-10-20"
+  summary: >-
+    The build tree configures, compiles and passes. 41 build steps and all
+    11 registered CTest gates pass, including the offline Python gates
+    that check generated outputs, the research catalogue, the repository
+    assets and the release-gate manifest. The stale caches that blocked
+    every configure attempt have been discarded and the tree reconfigured
+    at its current location.
+  evidence:
+    - "cmake -S . -B build -G Ninja -> Configuring done (92.0s), zlib and nlohmann_json re-fetched by pinned SHA256"
+    - "cmake --build build -> 41/41 targets built and linked"
+    - "ctest --test-dir build --output-on-failure -> 11/11 tests passed, 30.67s"
+    - "gates: virtual_hardware_laboratory, deterministic_core_stress, read_only_device_inventory, service_diagnostic_startup, authenticated_local_ipc, bridge_demo_preflight, bridge_invalid_daw, generated_output_validation, research_catalog_validation, repository_asset_validation, release_gate_manifest_validation"
+
+known_issues:
+  - id: UB-BLD-001
+    severity: critical
+    summary: >-
+      The build trees held CMake caches bound to the repository's previous
+      location, so every configure attempt failed before compiling anything.
+    evidence: >-
+      CMake Error: the current CMakeCache.txt directory
+      C:/Users/jpowe/Desktop/Projects/Universal-Bridge/build/CMakeCache.txt is
+      different than the directory
+      c:/Users/jpowe/Desktop/universal-bridge/build where CMakeCache.txt was
+      created.
+    status: FIXED
+    todo_ref: TODO-UB-001
+    notes: >-
+      Resolved 2026-10-20. Eleven stale trees had caches bound to the
+      pre-move path and were cleared. The p0-verify tree was already bound
+      to the correct path and was left untouched.
+  - id: UB-BLD-002
+    severity: medium
+    summary: >-
+      The build/ directory accumulates a growing set of sibling build trees,
+      each with its own cache, and no record of which is current.
+    evidence: >-
+      build/ lists 13 sibling trees; the top-level CMakeLists.txt sets
+      CMAKE_BINARY_DIR-relative output directories for all six targets.
+    status: OPEN
+    todo_ref: TODO-UB-002
+  - id: UB-BLD-003
+    severity: low
+    summary: >-
+      The VST3 client is experimental and off by default. It requires a
+      separately obtained Steinberg SDK checkout that is not vendored.
+    evidence: >-
+      CMakeLists.txt UBRIDGE_BUILD_VST3_CLIENT defaults OFF and fails
+      configure with FATAL_ERROR when UBRIDGE_VST3_SDK_ROOT is not a complete
+      SDK checkout.
+    status: ACCEPTED
+    todo_ref: TODO-UB-003
+
+notes:
+  - >-
+    zlib and nlohmann_json are fetched at configure time by pinned URL and
+    SHA256. A first configure therefore needs network access; every later
+    build does not.
+  - >-
+    The static MSVC runtime is the default so the produced ZIP packages are
+    portable. Clang-CL sanitizer builds need the DLL runtime instead, which
+    is why the runtime selection is conditional.
+  - >-
+    Aetherius-OS and Poietek both depend on this project. It is the
+    hardware/session layer under the creative and IDE surfaces.
