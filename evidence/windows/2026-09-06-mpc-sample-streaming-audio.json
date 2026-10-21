@@ -1,0 +1,26 @@
+{
+  "schema_version": 1,
+  "captured_on": "2026-09-06",
+  "capability": "bounded_wasapi_streaming_capture",
+  "environment": {
+    "os": "Windows 10 Pro 22H2 build 19045",
+    "device": "MPC Sample Audio",
+    "direction": "capture",
+    "format": {
+      "channels": 2,
+      "sample_rate_hz": 44100,
+      "bits_per_sample": 32
+    }
+  },
+  "observation": {
+    "requested_duration_ms": 10000,
+    "frames_captured": 442764,
+    "samples_read": 885528,
+    "samples_dropped": 0,
+    "discontinuities": 1,
+    "peak": 0.0,
+    "final_state": "stopped",
+    "audio_written_to_disk": false
+  },
+  "boundary": "This proves bounded shared-mode WASAPI streaming and clean close for one ten-second silent capture. The startup discontinuity remains evidence against a qualified continuous-audio claim; latency, audible signal, long-run dropout, format changes, file transactions and simultaneous destinations remain open."
+}

@@ -1,0 +1,21 @@
+{
+  "source": "C:/Users/jpowe/Desktop/UBRIDGE-CERT-001/UBRIDE-CERT-001.xpj",
+  "operation": "read-only XPJ inspection",
+  "source_changes": false,
+  "container": "gzip",
+  "json_payload": true,
+  "schema_version": 28,
+  "master_tempo_bpm": 128.0,
+  "samples": 10,
+  "resolved_samples": 10,
+  "missing_samples": 0,
+  "tracks": 4,
+  "sequences": 8,
+  "song_slots": 32,
+  "evidence_level": "observed",
+  "limitations": [
+    "Counts and asset references are parsed; complete event and parameter translation is not yet implemented.",
+    "No XPJ writer or device write-back is enabled.",
+    "DAW reconstruction and lossless round-trip remain unqualified."
+  ]
+}

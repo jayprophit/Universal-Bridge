@@ -1,0 +1,31 @@
+{
+  "schema": "ubridge.hardware-evidence.v1",
+  "observed_at": "2026-09-05",
+  "device": "Akai MPC Sample",
+  "platform": "Windows 10 Pro 22H2 build 19045.7663 x64",
+  "endpoint": "MPC Sample",
+  "backend": "Windows WinMM fallback",
+  "probe": {
+    "direction": "input",
+    "duration_seconds": 30,
+    "total_messages": 1462,
+    "timing_clock_f8_observed": true,
+    "transport_start_fa_observed": false,
+    "transport_continue_fb_observed": false,
+    "transport_stop_fc_observed": false,
+    "song_position_f2_observed": false,
+    "sequence_note_events_observed": true,
+    "endpoint_closed": true
+  },
+  "interpretation": {
+    "mpc_to_bridge_clock": "observed on physical hardware",
+    "mpc_to_bridge_start_stop": "not observed because playback was already active and no captured stop edge occurred",
+    "mpc_to_daw_transport": "not yet qualified; requires a DAW-facing mediated port and host test",
+    "tempo_measurement": "not asserted from this verbose diagnostic capture"
+  },
+  "safety": {
+    "receive_only": true,
+    "messages_sent": 0,
+    "project_written": false
+  }
+}

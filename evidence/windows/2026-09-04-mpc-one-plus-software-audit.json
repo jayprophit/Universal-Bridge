@@ -1,0 +1,19 @@
+{
+  "device_profile": "akai.mpc-one-plus",
+  "official_route": {
+    "controller_mode": "documented by Akai",
+    "desktop_software": "MPC 2.15 compatible route",
+    "third_party_daw_component": "MPC plugin",
+    "two_way_scope": "Akai controller and desktop software integration; not evidence of arbitrary direct XPJ write-back"
+  },
+  "local_machine_audit": {
+    "mpc_desktop_software": "not found",
+    "akai_mpc_driver": "not found",
+    "inmusic_application": "not found",
+    "pace_or_ilok": "not found",
+    "mpc_one_plus_hardware": "not connected or observed"
+  },
+  "state": "declared-adapter-required",
+  "installation_attempted": false,
+  "reason": "Official downloads and activation require registered hardware and the user's inMusic/iLok accounts."
+}

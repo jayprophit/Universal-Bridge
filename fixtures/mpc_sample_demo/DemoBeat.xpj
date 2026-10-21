@@ -1,0 +1,9 @@
+# Sanitized Universal Bridge fixture
+# This is not a proprietary MPC project. It only tests safe discovery and inventory.
+project_name=Demo Beat
+bpm=92
+sequence=Verse A
+pad=A01
+sample=ProjectData/KICK_DEMO.wav
+pad=A02
+sample=ProjectData/SNARE_DEMO.wav

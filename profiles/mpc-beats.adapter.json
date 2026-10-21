@@ -1,0 +1,31 @@
+{
+  "adapter_schema_version": "0.1.0",
+  "id": "akai.mpc-beats.windows",
+  "display_name": "MPC Beats on Windows",
+  "status": "official-software-not-installed",
+  "modes": ["standalone", "plugin-in-third-party-daw"],
+  "documented_limits": {
+    "midi_tracks": 8,
+    "stereo_audio_tracks": 2,
+    "send_channels": 4,
+    "submix_channels": 8
+  },
+  "documented_exchange": [
+    "export audio and drag to DAW audio track",
+    "export MIDI and drag to DAW",
+    "export and import MIDI maps as XMM",
+    "MIDI Learn for class-compliant controllers"
+  ],
+  "universal_bridge_role": {
+    "official_assisted_host": true,
+    "canonical_source_of_truth": false,
+    "automatic_two_way_merge": false,
+    "direct_project_overwrite": false,
+    "future_validation": ["import canonical MIDI", "resolve samples to pads", "export MIDI equivalence", "export audio equivalence", "plugin host reopen"]
+  },
+  "installation": {
+    "source": "official Akai or inMusic flow only",
+    "requires_user_email_or_account_flow": true,
+    "installed_on_audited_pc": false
+  }
+}

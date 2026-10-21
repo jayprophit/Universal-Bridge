@@ -1,0 +1,28 @@
+{
+  "schema_version": 1,
+  "captured_on": "2026-09-06",
+  "capability": "experimental_vst3_client_validator",
+  "environment": {
+    "os": "Windows 10 Pro 22H2 build 19045",
+    "compiler": "MSVC 19.51.36256.0 / Visual Studio Build Tools 2026",
+    "sdk_tag": "v3.8.1_build_84",
+    "sdk_commit": "3cdf9ca5d1f5b1b21e0a86832aa4abe55607bd96",
+    "sdk_license_sha256": "b99e03d84202686308ba0c6556fcdff70885897cab8a87c02e75e4964a29aa76"
+  },
+  "artifact": {
+    "name": "UniversalBridgeVST3.vst3",
+    "binary_sha256": "a02eb437b63f42145c260c015226fce70cbecf35f2b8b0c53486916cd889babb",
+    "authenticode_status": "NotSigned",
+    "sdk_version_reported": "VST 3.8.1"
+  },
+  "validator": {
+    "exit_code": 0,
+    "tests_passed": 47,
+    "tests_failed": 0,
+    "sample_precisions": [32, 64],
+    "stereo_and_mono_arrangements_passed": true,
+    "state_transition_tests_passed": true,
+    "parameter_bypass_persistence_passed": true
+  },
+  "boundary": "The optional audio-transparent component/controller pair built and passed the Steinberg validator. It is unsigned and has no editor, authenticated service IPC, MPC mapping, transport relay, Cubase/Reason host-session evidence, project reopen evidence, or crash-isolation certification."
+}
